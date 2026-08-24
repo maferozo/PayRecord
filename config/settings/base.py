@@ -35,6 +35,7 @@ LOCAL_APPS = [
     "apps.core",
     "apps.usuarios",
     "apps.obligaciones",
+    "apps.dashboard",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -105,7 +106,7 @@ else:
 AUTH_USER_MODEL = "usuarios.Usuario"
 
 LOGIN_URL = "usuarios:login"
-LOGIN_REDIRECT_URL = "core:inicio"
+LOGIN_REDIRECT_URL = "dashboard:inicio"
 LOGOUT_REDIRECT_URL = "core:inicio"
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # el enlace de recuperación dura 24 horas

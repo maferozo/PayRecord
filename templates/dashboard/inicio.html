@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load formato obligaciones_extras %}
+
+{% block titulo %}Dashboard — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h4 mb-1">Hola, {{ user.get_short_name }}</h1>
+    <p class="text-secondary small mb-0">
+      {{ hoy|date:"l, d \d\e F \d\e Y"|capfirst }}
+      {% if user.empresa %} · {{ user.empresa.nombre }}{% endif %}
+    </p>
+  </div>
+  <a href="{% url 'obligaciones:crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Registrar obligación
+  </a>
+</div>
+
+{# ---------- Dinero comprometido ---------- #}
+<div class="pr-tarjeta p-4 mb-3">
+  <p class="pr-etiqueta mb-1">Dinero comprometido</p>
+  <p class="pr-cifra mb-1">{{ resumen.comprometido|moneda_cop }}</p>
+  <p class="text-secondary small mb-0">
+    Es el total de lo que aún no has pagado.
+  </p>
+</div>
+
+{# ---------- Resumen por estado ---------- #}
+<div class="row g-3 mb-4">
+  {% with r=resumen %}
+  <div class="col-6 col-lg-3">
+    <a href="{% url 'obligaciones:lista' %}?estado=VENCIDA" class="text-decoration-none">
+      <div class="pr-tarjeta p-3 h-100">
+        <span class="pr-estado pr-estado-vencida mb-2"><i class="bi bi-x-circle"></i>Vencidas</span>
+        <p class="pr-cifra mb-0">{{ r.vencidas.cantidad }}</p>
+        <p class="small text-secondary mb-0">{{ r.vencidas.total|moneda_cop }}</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a href="{% url 'obligaciones:lista' %}?estado=PROXIMA_VENCER" class="text-decoration-none">
+      <div class="pr-tarjeta p-3 h-100">
+        <span class="pr-estado pr-estado-proxima_vencer mb-2"><i class="bi bi-exclamation-circle"></i>Próximas</span>
+        <p class="pr-cifra mb-0">{{ r.proximas.cantidad }}</p>
+        <p class="small text-secondary mb-0">{{ r.proximas.total|moneda_cop }}</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a href="{% url 'obligaciones:lista' %}?estado=PENDIENTE" class="text-decoration-none">
+      <div class="pr-tarjeta p-3 h-100">
+        <span class="pr-estado pr-estado-pendiente mb-2"><i class="bi bi-circle"></i>Pendientes</span>
+        <p class="pr-cifra mb-0">{{ r.pendientes.cantidad }}</p>
+        <p class="small text-secondary mb-0">{{ r.pendientes.total|moneda_cop }}</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a href="{% url 'obligaciones:lista' %}?estado=PAGADA" class="text-decoration-none">
+      <div class="pr-tarjeta p-3 h-100">
+        <span class="pr-estado pr-estado-pagada mb-2"><i class="bi bi-check-circle"></i>Pagadas</span>
+        <p class="pr-cifra mb-0">{{ r.pagadas.cantidad }}</p>
+        <p class="small text-secondary mb-0">{{ r.pagadas.total|moneda_cop }}</p>
+      </div>
+    </a>
+  </div>
+  {% endwith %}
+</div>
+
+<div class="row g-3">
+
+  {# ---------- Prioridades ---------- #}
+  <div class="col-12 col-lg-7">
+    <div class="pr-tarjeta p-4 h-100">
+      <div class="d-flex justify-content-between align-items-baseline mb-1">
+        <p class="pr-etiqueta mb-0">Prioridades de hoy</p>
+      </div>
+      <p class="text-secondary small mb-3">
+        Orden calculado a partir del vencimiento, el monto, tu prioridad y la
+        categoría. Cada obligación muestra por qué está aquí.
+      </p>
+
+      {% for obligacion, prioridad in prioridades %}
+        <div class="d-flex gap-3 align-items-start py-3 {% if not forloop.last %}border-bottom{% endif %}">
+          <span class="fs-5 flex-shrink-0" aria-hidden="true">{{ prioridad.indicador }}</span>
+
+          <div class="flex-grow-1 min-w-0">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+              <a href="{% url 'obligaciones:detalle' obligacion.pk %}"
+                 class="fw-semibold text-decoration-none text-truncate">
+                {{ obligacion.concepto }}
+              </a>
+              <span class="fw-semibold" style="font-variant-numeric: tabular-nums;">
+                {{ obligacion.monto|moneda_cop }}
+              </span>
+            </div>
+
+            <ul class="list-unstyled mb-0 mt-1">
+              {% for motivo in prioridad.motivos %}
+                <li class="small text-secondary">
+                  <i class="bi bi-dot"></i>{{ motivo }}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% empty %}
+        <div class="text-center text-secondary py-4">
+          <i class="bi bi-check2-circle fs-1 d-block mb-2"></i>
+          No tienes obligaciones pendientes. Todo al día.
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ---------- Próximas ---------- #}
+  <div class="col-12 col-lg-5">
+    <div class="pr-tarjeta p-4 mb-3">
+      <p class="pr-etiqueta mb-3">Próximas por fecha</p>
+
+      {% for obligacion in proximas %}
+        <div class="d-flex align-items-center gap-2 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                style="width:34px; height:34px; background:{{ obligacion.categoria.color }}1A; color:{{ obligacion.categoria.color }};">
+            <i class="bi {{ obligacion.categoria.icono|default:'bi-tag' }}"></i>
+          </span>
+          <div class="flex-grow-1 min-w-0">
+            <a href="{% url 'obligaciones:detalle' obligacion.pk %}"
+               class="d-block text-decoration-none text-truncate small fw-semibold">
+              {{ obligacion.concepto }}
+            </a>
+            <span class="small text-secondary">{{ obligacion.fecha_vencimiento|texto_vencimiento }}</span>
+          </div>
+          <span class="small fw-semibold flex-shrink-0" style="font-variant-numeric: tabular-nums;">
+            {{ obligacion.monto|moneda_cop }}
+          </span>
+        </div>
+      {% empty %}
+        <p class="text-secondary small mb-0">Nada por vencer.</p>
+      {% endfor %}
+    </div>
+
+    {# ---------- Por categoría ---------- #}
+    <div class="pr-tarjeta p-4 {% if proveedores %}mb-3{% endif %}">
+      <p class="pr-etiqueta mb-3">Comprometido por categoría</p>
+      {% for fila in por_categoria %}
+        <div class="d-flex align-items-center gap-2 py-1">
+          <span class="rounded-circle flex-shrink-0"
+                style="width:10px; height:10px; background:{{ fila.categoria__color }};"></span>
+          <span class="flex-grow-1 small text-truncate">{{ fila.categoria__nombre }}</span>
+          <span class="small text-secondary">{{ fila.cantidad }}</span>
+          <span class="small fw-semibold" style="font-variant-numeric: tabular-nums;">
+            {{ fila.total|moneda_cop }}
+          </span>
+        </div>
+      {% empty %}
+        <p class="text-secondary small mb-0">Sin datos todavía.</p>
+      {% endfor %}
+    </div>
+
+    {# ---------- Proveedores (solo empresa) ---------- #}
+    {% if proveedores %}
+      <div class="pr-tarjeta p-4">
+        <p class="pr-etiqueta mb-3">Principales proveedores</p>
+        {% for fila in proveedores %}
+          <div class="d-flex align-items-center gap-2 py-1">
+            <i class="bi bi-truck text-secondary flex-shrink-0"></i>
+            <span class="flex-grow-1 small text-truncate">{{ fila.proveedor }}</span>
+            <span class="small fw-semibold" style="font-variant-numeric: tabular-nums;">
+              {{ fila.total|moneda_cop }}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

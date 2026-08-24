@@ -24,7 +24,7 @@ class RegistroTests(TestCase):
 
     def test_registro_correcto_crea_usuario_y_lo_autentica(self):
         respuesta = self.client.post(self.url, self.datos)
-        self.assertRedirects(respuesta, reverse("core:inicio"))
+        self.assertRedirects(respuesta, reverse("dashboard:inicio"))
 
         usuario = Usuario.objects.get(email="maria@example.com")
         self.assertEqual(usuario.nombre, "María Rodríguez")
@@ -73,7 +73,7 @@ class RegistroTests(TestCase):
             "nit": "900123456-7",
         })
         respuesta = self.client.post(self.url, self.datos)
-        self.assertRedirects(respuesta, reverse("core:inicio"))
+        self.assertRedirects(respuesta, reverse("dashboard:inicio"))
 
         usuario = Usuario.objects.get(email="maria@example.com")
         self.assertTrue(usuario.es_empresa)
@@ -104,7 +104,7 @@ class LoginTests(TestCase):
         respuesta = self.client.post(
             self.url, {"username": "maria@example.com", "password": "ClaveSegura123"}
         )
-        self.assertRedirects(respuesta, reverse("core:inicio"))
+        self.assertRedirects(respuesta, reverse("dashboard:inicio"))
         self.assertIn("_auth_user_id", self.client.session)
 
     def test_contrasena_incorrecta(self):

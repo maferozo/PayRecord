@@ -14,11 +14,11 @@ class RegistroView(CreateView):
 
     form_class = RegistroForm
     template_name = "usuarios/registro.html"
-    success_url = reverse_lazy("core:inicio")
+    success_url = reverse_lazy("dashboard:inicio")
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect("core:inicio")
+            return redirect("dashboard:inicio")
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):

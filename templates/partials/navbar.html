@@ -19,7 +19,12 @@ Los enlaces del menú se irán habilitando por fases.
       <ul class="navbar-nav ms-auto align-items-lg-center">
         {% if user.is_authenticated %}
 
-          {# Dashboard, Calendario y Estadísticas: fases 5 a 8 #}
+          {# Calendario, Recordatorios y Estadísticas: fases 6 a 8 #}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'dashboard:inicio' %}">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'obligaciones:lista' %}">
               <i class="bi bi-list-check me-1"></i>Mis obligaciones

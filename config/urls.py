@@ -10,7 +10,7 @@ urlpatterns = [
     path("", include("apps.core.urls")),
     path("cuenta/", include("apps.usuarios.urls")),
     path("", include("apps.obligaciones.urls")),
-    # Fase 5: path("dashboard/", include("apps.dashboard.urls")),
+    path("dashboard/", include("apps.dashboard.urls")),
 ]
 
 if settings.DEBUG:
