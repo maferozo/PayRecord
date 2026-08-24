@@ -6,4 +6,5 @@ app_name = "dashboard"
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
+    path("calendario/", views.calendario, name="calendario"),
 ]

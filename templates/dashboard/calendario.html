@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load formato obligaciones_extras %}
+
+{% block titulo %}Calendario — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h4 mb-1">Calendario</h1>
+    <p class="text-secondary small mb-0">
+      {{ cantidad_mes }} obligación{{ cantidad_mes|pluralize:"es" }} este mes ·
+      <strong>{{ total_mes|moneda_cop }}</strong>
+    </p>
+  </div>
+  <a href="{% url 'obligaciones:crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Registrar obligación
+  </a>
+</div>
+
+<div class="row g-3">
+
+  {# ---------- Cuadrícula del mes ---------- #}
+  <div class="col-12 {% if dia_seleccionado %}col-lg-8{% endif %}">
+    <div class="pr-tarjeta p-3 p-md-4">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="?anio={{ anterior.anio }}&mes={{ anterior.mes }}"
+           class="btn btn-sm btn-outline-secondary" aria-label="Mes anterior">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+
+        <div class="text-center">
+          <p class="h5 mb-0">{{ nombre_mes }}</p>
+          {% if anio != hoy.year or mes != hoy.month %}
+            <a href="{% url 'dashboard:calendario' %}" class="small">Ir a hoy</a>
+          {% endif %}
+        </div>
+
+        <a href="?anio={{ siguiente.anio }}&mes={{ siguiente.mes }}"
+           class="btn btn-sm btn-outline-secondary" aria-label="Mes siguiente">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </div>
+
+      <div class="pr-calendario mb-1">
+        {% for dia in dias_semana %}
+          <div class="pr-calendario-cabecera">{{ dia }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="pr-calendario">
+        {% for semana in semanas %}
+          {% for dia in semana %}
+            <a class="pr-dia
+                      {% if not dia.del_mes %}pr-dia-fuera{% endif %}
+                      {% if dia.es_hoy %}pr-dia-hoy{% endif %}
+                      {% if dia.fecha == dia_seleccionado %}pr-dia-seleccionado{% endif %}
+                      {% if dia.tiene_vencidas %}pr-dia-vencido{% elif dia.todas_pagadas %}pr-dia-pagado{% endif %}"
+               href="?anio={{ anio }}&mes={{ mes }}&dia={{ dia.fecha.day }}"
+               {% if dia.obligaciones %}
+                 aria-label="{{ dia.fecha|date:'d/m/Y' }}: {{ dia.obligaciones|length }} obligación{{ dia.obligaciones|length|pluralize:'es' }}"
+               {% else %}
+                 aria-label="{{ dia.fecha|date:'d/m/Y' }}: sin obligaciones"
+               {% endif %}>
+
+              <span class="pr-dia-numero">{{ dia.fecha.day }}</span>
+
+              {% if dia.obligaciones %}
+                <span class="pr-dia-monto">{{ dia.total|moneda_cop }}</span>
+                <span class="pr-dia-puntos">
+                  {% for color in dia.colores %}
+                    <span class="pr-punto" style="background: {{ color }};"></span>
+                  {% endfor %}
+                </span>
+              {% endif %}
+            </a>
+          {% endfor %}
+        {% endfor %}
+      </div>
+
+      <div class="d-flex flex-wrap gap-3 mt-3 pt-3 border-top small text-secondary">
+        <span><span class="pr-punto d-inline-block me-1" style="background: var(--pr-vencido);"></span>Con vencidas</span>
+        <span><span class="pr-punto d-inline-block me-1" style="background: var(--pr-pagado);"></span>Todo pagado</span>
+        <span><i class="bi bi-square me-1" style="color: var(--pr-azul-500);"></i>Hoy</span>
+      </div>
+
+    </div>
+  </div>
+
+  {# ---------- Detalle del día ---------- #}
+  {% if dia_seleccionado %}
+    <div class="col-12 col-lg-4">
+      <div class="pr-tarjeta p-4">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <p class="pr-etiqueta mb-0">
+            {{ dia_seleccionado|date:"d \d\e F" }}
+          </p>
+          <a href="?anio={{ anio }}&mes={{ mes }}" class="small text-decoration-none"
+             aria-label="Cerrar detalle del día">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+
+        {% if obligaciones_dia %}
+          <p class="pr-cifra mb-3">{{ total_dia|moneda_cop }}</p>
+
+          {% for obligacion in obligaciones_dia %}
+            <div class="d-flex align-items-start gap-2 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                    style="width:34px; height:34px; background:{{ obligacion.categoria.color }}1A; color:{{ obligacion.categoria.color }};">
+                <i class="bi {{ obligacion.categoria.icono|default:'bi-tag' }}"></i>
+              </span>
+              <div class="flex-grow-1 min-w-0">
+                <a href="{% url 'obligaciones:detalle' obligacion.pk %}"
+                   class="d-block text-decoration-none fw-semibold text-truncate small">
+                  {{ obligacion.concepto }}
+                </a>
+                <span class="pr-estado {{ obligacion.estado|clase_estado }}" style="font-size:.6875rem;">
+                  {{ obligacion.estado|etiqueta_estado }}
+                </span>
+              </div>
+              <span class="small fw-semibold flex-shrink-0" style="font-variant-numeric: tabular-nums;">
+                {{ obligacion.monto|moneda_cop }}
+              </span>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-secondary small mb-0 mt-3">
+            No hay obligaciones que venzan este día.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

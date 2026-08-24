@@ -94,6 +94,36 @@ def gasto_por_categoria(usuario, hoy=None, limite=6):
     )
 
 
+def obligaciones_del_mes(usuario, anio, mes, hoy=None):
+    """Obligaciones que vencen dentro de la cuadrícula de un mes (§24).
+
+    Incluye los días visibles de los meses vecinos, para que las celdas de
+    relleno del calendario también muestren su contenido.
+    """
+    import calendar as _calendar
+
+    hoy = hoy or timezone.localdate()
+
+    semanas = _calendar.Calendar(_calendar.MONDAY).monthdatescalendar(anio, mes)
+    desde, hasta = semanas[0][0], semanas[-1][-1]
+
+    return list(
+        _consulta_base(usuario, hoy)
+        .filter(fecha_vencimiento__range=(desde, hasta))
+        .order_by("fecha_vencimiento", "-monto")
+    )
+
+
+def obligaciones_del_dia(usuario, fecha, hoy=None):
+    """Detalle de una fecha concreta del calendario (§24)."""
+    hoy = hoy or timezone.localdate()
+    return list(
+        _consulta_base(usuario, hoy)
+        .filter(fecha_vencimiento=fecha)
+        .order_by("-monto")
+    )
+
+
 def principales_proveedores(usuario, limite=5, hoy=None):
     """Top de proveedores por monto pendiente (§26).
 

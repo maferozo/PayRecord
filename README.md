@@ -18,8 +18,8 @@ Proyecto de trabajo de grado.
 | 3 | Categorías | ✅ Completada |
 | 4 | Obligaciones | ✅ Completada |
 | 5 | Dashboard y prioridades | ✅ Completada |
-| 6 | Calendario | ⏳ Siguiente |
-| 7 | Recordatorios | ⏳ |
+| 6 | Calendario | ✅ Completada |
+| 7 | Recordatorios | ⏳ Siguiente |
 | 8 | Historial y estadísticas | ⏳ |
 | 9 | Escenario empresarial | ⏳ |
 | 10 | Insights | ⏳ |
