@@ -1,11 +1,17 @@
+from decimal import Decimal
+
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.urls import reverse
+from django.utils import timezone
 
 from apps.core.models import ModeloBase
 
-from .enums import AmbitoCategoria
-from .managers import CategoriaQuerySet
+from .enums import AmbitoCategoria, EstadoObligacion, Prioridad
+from .managers import CategoriaQuerySet, ObligacionQuerySet
+from .services.estados import UMBRAL_POR_DEFECTO, calcular_estado, dias_para_vencer
 
 
 class Categoria(ModeloBase):
@@ -70,3 +76,127 @@ class Categoria(ModeloBase):
     @property
     def es_predeterminada(self):
         return self.usuario_id is None
+
+
+class Obligacion(ModeloBase):
+    """Obligación de pago: la entidad central de PAYRECORD (§7).
+
+    El estado no se almacena, se deriva (decisión D3). La propiedad de los
+    datos se resuelve siempre a través de `Obligacion.objects.visibles_para`.
+    """
+
+    # --- Propiedad y seguridad (decisión D1) ---
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Registrada por",
+        on_delete=models.CASCADE,
+        related_name="obligaciones",
+    )
+    empresa = models.ForeignKey(
+        "usuarios.Empresa",
+        verbose_name="Empresa",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="obligaciones",
+        help_text="Se rellena automáticamente en las cuentas de empresa.",
+    )
+
+    # --- Datos de la obligación (§7) ---
+    concepto = models.CharField("Concepto", max_length=150)
+    descripcion = models.TextField("Descripción", blank=True)
+    monto = models.DecimalField(
+        "Valor",
+        max_digits=14,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    fecha_vencimiento = models.DateField("Fecha de vencimiento")
+    categoria = models.ForeignKey(
+        Categoria,
+        verbose_name="Categoría",
+        on_delete=models.PROTECT,
+        related_name="obligaciones",
+    )
+    enlace_pago = models.URLField("Enlace de pago", max_length=500, blank=True)
+    prioridad_usuario = models.CharField(
+        "Prioridad",
+        max_length=6,
+        choices=Prioridad.choices,
+        default=Prioridad.MEDIA,
+    )
+
+    # --- Pago: la fuente de verdad del estado ---
+    pagada = models.BooleanField("Pagada", default=False)
+    fecha_pago = models.DateField("Fecha de pago", null=True, blank=True)
+
+    # --- Campos del escenario empresarial (§7), opcionales ---
+    proveedor = models.CharField("Proveedor", max_length=150, blank=True)
+    referencia = models.CharField("Referencia o número de factura", max_length=80, blank=True)
+
+    # --- Borrado lógico (decisión D7) ---
+    eliminada_en = models.DateTimeField("Eliminada en", null=True, blank=True)
+
+    objects = ObligacionQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "Obligación"
+        verbose_name_plural = "Obligaciones"
+        ordering = ["fecha_vencimiento", "-monto"]
+        indexes = [
+            models.Index(fields=["usuario", "fecha_vencimiento"]),
+            models.Index(fields=["empresa", "fecha_vencimiento"]),
+            models.Index(fields=["pagada", "fecha_vencimiento"]),
+        ]
+
+    def __str__(self):
+        return f"{self.concepto} ({self.monto})"
+
+    def get_absolute_url(self):
+        return reverse("obligaciones:detalle", args=[self.pk])
+
+    # --- Estado derivado (§9) ---
+
+    @property
+    def umbral_usuario(self):
+        configuracion = getattr(self.usuario, "configuracion", None)
+        return configuracion.dias_proximo_vencimiento if configuracion else UMBRAL_POR_DEFECTO
+
+    @property
+    def estado_actual(self):
+        """Estado calculado en Python.
+
+        En los listados se usa la anotación SQL `estado`, que aplica la misma
+        regla; este atajo es para una obligación suelta.
+        """
+        return calcular_estado(
+            pagada=self.pagada,
+            fecha_vencimiento=self.fecha_vencimiento,
+            hoy=timezone.localdate(),
+            umbral_dias=self.umbral_usuario,
+        )
+
+    @property
+    def dias_restantes(self):
+        return dias_para_vencer(self.fecha_vencimiento, timezone.localdate())
+
+    @property
+    def esta_vencida(self):
+        return self.estado_actual == EstadoObligacion.VENCIDA
+
+    # --- Operaciones ---
+
+    def marcar_pagada(self, fecha=None):
+        self.pagada = True
+        self.fecha_pago = fecha or timezone.localdate()
+        self.save(update_fields=["pagada", "fecha_pago", "actualizado_en"])
+
+    def marcar_pendiente(self):
+        self.pagada = False
+        self.fecha_pago = None
+        self.save(update_fields=["pagada", "fecha_pago", "actualizado_en"])
+
+    def eliminar_logicamente(self):
+        """Conserva la fila para no romper historial ni estadísticas (§17, §18)."""
+        self.eliminada_en = timezone.now()
+        self.save(update_fields=["eliminada_en", "actualizado_en"])

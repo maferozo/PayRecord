@@ -1,7 +1,10 @@
-from django import forms
+from decimal import Decimal
 
-from .enums import AmbitoCategoria
-from .models import Categoria
+from django import forms
+from django.utils import timezone
+
+from .enums import AmbitoCategoria, Prioridad
+from .models import Categoria, Obligacion
 
 # Paleta acotada: mantiene la coherencia visual de §22 y evita que el
 # usuario elija colores ilegibles sobre fondo claro.
@@ -96,3 +99,128 @@ class CategoriaForm(forms.ModelForm):
         if commit:
             categoria.save()
         return categoria
+
+
+class ObligacionForm(forms.ModelForm):
+    """Registro y edición de una obligación (§10).
+
+    Dos puntos de seguridad:
+      - el selector de categorías se limita a las visibles para el usuario,
+        de modo que no puede asignar la categoría privada de otro;
+      - el propietario nunca llega desde el formulario, lo fija la vista.
+    """
+
+    class Meta:
+        model = Obligacion
+        fields = (
+            "concepto",
+            "monto",
+            "fecha_vencimiento",
+            "categoria",
+            "prioridad_usuario",
+            "descripcion",
+            "enlace_pago",
+            "proveedor",
+            "referencia",
+        )
+        widgets = {
+            "concepto": forms.TextInput(attrs={"placeholder": "Internet"}),
+            "fecha_vencimiento": forms.DateInput(
+                attrs={"type": "date"}, format="%Y-%m-%d"
+            ),
+            "monto": forms.NumberInput(attrs={"step": "0.01", "min": "0.01",
+                                              "placeholder": "120000"}),
+            "descripcion": forms.Textarea(attrs={"rows": 3}),
+            "enlace_pago": forms.URLInput(
+                attrs={"placeholder": "https://pagos.miempresa.com/factura"}
+            ),
+            "referencia": forms.TextInput(attrs={"placeholder": "FAC-00123"}),
+        }
+        labels = {
+            "prioridad_usuario": "¿Qué tan importante es para ti?",
+            "enlace_pago": "Enlace de pago (opcional)",
+        }
+        help_texts = {
+            "enlace_pago": "PAYRECORD no realiza pagos: solo te lleva al enlace que indiques.",
+        }
+
+    def __init__(self, *args, usuario=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.usuario = usuario
+
+        self.fields["categoria"].queryset = Categoria.objects.disponibles_para(usuario)
+        self.fields["categoria"].empty_label = "Elige una categoría"
+
+        # Los campos empresariales solo aplican a ese tipo de cuenta (§7).
+        if not usuario.es_empresa:
+            del self.fields["proveedor"]
+            del self.fields["referencia"]
+
+        for campo in ("descripcion", "enlace_pago"):
+            self.fields[campo].required = False
+
+    def clean_monto(self):
+        monto = self.cleaned_data["monto"]
+        if monto <= Decimal("0"):
+            raise forms.ValidationError("El valor debe ser mayor que cero.")
+        if monto >= Decimal("1000000000000"):
+            raise forms.ValidationError("El valor es demasiado grande.")
+        return monto
+
+    def clean_fecha_vencimiento(self):
+        """Se admiten fechas pasadas: sirve para registrar deudas ya vencidas.
+
+        Solo se descartan fechas absurdamente lejanas, que suelen ser errores
+        de digitación.
+        """
+        fecha = self.cleaned_data["fecha_vencimiento"]
+        limite = timezone.localdate().replace(year=timezone.localdate().year + 50)
+        if fecha > limite:
+            raise forms.ValidationError("Revisa la fecha: está demasiado lejos en el futuro.")
+        return fecha
+
+    def clean_concepto(self):
+        return self.cleaned_data["concepto"].strip()
+
+    def save(self, commit=True):
+        obligacion = super().save(commit=False)
+        obligacion.usuario = self.usuario
+        # La empresa se copia del usuario: nunca llega desde el formulario.
+        obligacion.empresa = self.usuario.empresa
+        if commit:
+            obligacion.save()
+        return obligacion
+
+
+class FiltroObligacionesForm(forms.Form):
+    """Filtros del listado. Todos opcionales."""
+
+    ESTADOS = [("", "Todos los estados")]
+
+    q = forms.CharField(
+        label="Buscar",
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Concepto, proveedor o referencia"}),
+    )
+    estado = forms.ChoiceField(label="Estado", required=False, choices=ESTADOS)
+    categoria = forms.ModelChoiceField(
+        label="Categoría",
+        required=False,
+        queryset=Categoria.objects.none(),
+        empty_label="Todas las categorías",
+    )
+    prioridad = forms.ChoiceField(
+        label="Prioridad",
+        required=False,
+        choices=[("", "Cualquier prioridad")] + list(Prioridad.choices),
+    )
+
+    def __init__(self, *args, usuario=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .managers import ESTADOS_FILTRABLES
+
+        self.fields["estado"].choices = self.ESTADOS + [
+            (valor, etiqueta) for valor, etiqueta in ESTADOS_FILTRABLES
+        ]
+        if usuario:
+            self.fields["categoria"].queryset = Categoria.objects.disponibles_para(usuario)

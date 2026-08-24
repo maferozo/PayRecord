@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load formato obligaciones_extras %}
+
+{% block titulo %}{{ obligacion.concepto }} — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<nav aria-label="Ruta" class="mb-3">
+  <a href="{% url 'obligaciones:lista' %}" class="small text-decoration-none">
+    <i class="bi bi-arrow-left me-1"></i>Mis obligaciones
+  </a>
+</nav>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-8">
+    <div class="pr-tarjeta p-4">
+
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+          <span class="pr-estado {{ obligacion.estado_actual|clase_estado }} mb-2">
+            <i class="bi {{ obligacion.estado_actual|icono_estado }}"></i>
+            {{ obligacion.estado_actual|etiqueta_estado }}
+          </span>
+          <h1 class="h4 mb-1">{{ obligacion.concepto }}</h1>
+          <p class="text-secondary mb-0">{{ obligacion.categoria.nombre }}</p>
+        </div>
+        <div class="text-end">
+          <p class="pr-cifra mb-0">{{ obligacion.monto|moneda_cop }}</p>
+        </div>
+      </div>
+
+      <dl class="row mb-0">
+        <dt class="col-5 col-sm-4 text-secondary fw-normal">Vencimiento</dt>
+        <dd class="col-7 col-sm-8">
+          {{ obligacion.fecha_vencimiento|date:"d \d\e F \d\e Y" }}
+          {% if not obligacion.pagada %}
+            <span class="text-secondary small">· {{ obligacion.fecha_vencimiento|texto_vencimiento }}</span>
+          {% endif %}
+        </dd>
+
+        <dt class="col-5 col-sm-4 text-secondary fw-normal">Prioridad</dt>
+        <dd class="col-7 col-sm-8">{{ obligacion.prioridad_usuario|etiqueta_prioridad }}</dd>
+
+        {% if obligacion.pagada %}
+          <dt class="col-5 col-sm-4 text-secondary fw-normal">Pagada el</dt>
+          <dd class="col-7 col-sm-8">{{ obligacion.fecha_pago|date:"d/m/Y" }}</dd>
+        {% endif %}
+
+        {% if obligacion.proveedor %}
+          <dt class="col-5 col-sm-4 text-secondary fw-normal">Proveedor</dt>
+          <dd class="col-7 col-sm-8">{{ obligacion.proveedor }}</dd>
+        {% endif %}
+
+        {% if obligacion.referencia %}
+          <dt class="col-5 col-sm-4 text-secondary fw-normal">Referencia</dt>
+          <dd class="col-7 col-sm-8">{{ obligacion.referencia }}</dd>
+        {% endif %}
+
+        {% if obligacion.descripcion %}
+          <dt class="col-12 text-secondary fw-normal mt-2">Descripción</dt>
+          <dd class="col-12">{{ obligacion.descripcion|linebreaksbr }}</dd>
+        {% endif %}
+      </dl>
+
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="pr-tarjeta p-4 mb-3">
+      <p class="pr-etiqueta mb-3">Acciones</p>
+
+      <form method="post" action="{% url 'obligaciones:cambiar_pago' obligacion.pk %}" class="d-grid mb-2">
+        {% csrf_token %}
+        {% if obligacion.pagada %}
+          <button type="submit" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Volver a pendiente
+          </button>
+        {% else %}
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg me-1"></i>Marcar como pagada
+          </button>
+        {% endif %}
+      </form>
+
+      {% if obligacion.enlace_pago %}
+        <a href="{{ obligacion.enlace_pago }}" target="_blank" rel="noopener noreferrer"
+           class="btn btn-outline-primary w-100 mb-2">
+          <i class="bi bi-box-arrow-up-right me-1"></i>Ir al enlace de pago
+        </a>
+        <p class="small text-secondary mb-0">
+          PAYRECORD no procesa el pago: te lleva al enlace que registraste.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="pr-tarjeta p-4">
+      <p class="pr-etiqueta mb-3">Gestionar</p>
+      <div class="d-grid gap-2">
+        <a href="{% url 'obligaciones:editar' obligacion.pk %}" class="btn btn-outline-secondary">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+        <a href="{% url 'obligaciones:eliminar' obligacion.pk %}" class="btn btn-outline-danger">
+          <i class="bi bi-trash me-1"></i>Eliminar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

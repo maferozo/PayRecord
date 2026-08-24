@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load formato obligaciones_extras crispy_forms_tags %}
+
+{% block titulo %}Mis obligaciones — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h4 mb-1">Mis obligaciones</h1>
+    <p class="text-secondary small mb-0">
+      {{ conteo_total }} obligación{{ conteo_total|pluralize:"es" }} ·
+      pendiente por pagar: <strong>{{ total_pendiente|moneda_cop }}</strong>
+    </p>
+  </div>
+  <a href="{% url 'obligaciones:crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Registrar obligación
+  </a>
+</div>
+
+<form method="get" class="pr-tarjeta p-3 mb-4">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">{{ filtros.q|as_crispy_field }}</div>
+    <div class="col-6 col-md-3">{{ filtros.estado|as_crispy_field }}</div>
+    <div class="col-6 col-md-3">{{ filtros.categoria|as_crispy_field }}</div>
+    <div class="col-12 col-md-2 d-grid">
+      <button type="submit" class="btn btn-outline-primary">
+        <i class="bi bi-funnel me-1"></i>Filtrar
+      </button>
+    </div>
+  </div>
+</form>
+
+{% if obligaciones %}
+  <div class="row g-3">
+    {% for obligacion in obligaciones %}
+      <div class="col-12">
+        <div class="pr-tarjeta p-3 {{ obligacion.prioridad_usuario|clase_prioridad }}">
+          <div class="d-flex flex-wrap align-items-center gap-3">
+
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                  style="width:44px; height:44px; background:{{ obligacion.categoria.color }}1A; color:{{ obligacion.categoria.color }};">
+              <i class="bi {{ obligacion.categoria.icono|default:'bi-tag' }} fs-5"></i>
+            </span>
+
+            <div class="flex-grow-1 min-w-0" style="min-width: 12rem;">
+              <a href="{% url 'obligaciones:detalle' obligacion.pk %}"
+                 class="text-decoration-none fw-semibold d-block text-truncate">
+                {{ obligacion.concepto }}
+              </a>
+              <p class="mb-0 small text-secondary">
+                {{ obligacion.categoria.nombre }}
+                {% if obligacion.proveedor %} · {{ obligacion.proveedor }}{% endif %}
+              </p>
+            </div>
+
+            <div class="text-md-end">
+              <p class="mb-0 fw-semibold" style="font-variant-numeric: tabular-nums;">
+                {{ obligacion.monto|moneda_cop }}
+              </p>
+              <p class="mb-0 small text-secondary">
+                {{ obligacion.fecha_vencimiento|date:"d/m/Y" }}
+              </p>
+            </div>
+
+            <div class="text-md-end" style="min-width: 10rem;">
+              <span class="pr-estado {{ obligacion.estado|clase_estado }}">
+                <i class="bi {{ obligacion.estado|icono_estado }}"></i>
+                {{ obligacion.estado|etiqueta_estado }}
+              </span>
+              {% if not obligacion.pagada %}
+                <p class="mb-0 small text-secondary mt-1">
+                  {{ obligacion.fecha_vencimiento|texto_vencimiento }}
+                </p>
+              {% endif %}
+            </div>
+
+            <div class="flex-shrink-0">
+              <form method="post" action="{% url 'obligaciones:cambiar_pago' obligacion.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="siguiente" value="{{ request.get_full_path }}">
+                {% if obligacion.pagada %}
+                  <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reabrir
+                  </button>
+                {% else %}
+                  <button type="submit" class="btn btn-sm btn-success">
+                    <i class="bi bi-check-lg me-1"></i>Pagada
+                  </button>
+                {% endif %}
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+    <nav class="mt-4" aria-label="Paginación">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+          </li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+
+{% else %}
+  <div class="pr-tarjeta p-5 text-center text-secondary">
+    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+    <p class="mb-3">No hay obligaciones que coincidan.</p>
+    <a href="{% url 'obligaciones:crear' %}" class="btn btn-primary">
+      Registrar la primera
+    </a>
+  </div>
+{% endif %}
+
+{% endblock %}

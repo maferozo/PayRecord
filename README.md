@@ -16,8 +16,8 @@ Proyecto de trabajo de grado.
 | 1 | Configuración del proyecto | ✅ Completada |
 | 2 | Usuarios y autenticación | ✅ Completada |
 | 3 | Categorías | ✅ Completada |
-| 4 | Obligaciones | ⏳ Siguiente |
-| 5 | Dashboard y prioridades | ⏳ |
+| 4 | Obligaciones | ✅ Completada |
+| 5 | Dashboard y prioridades | ⏳ Siguiente |
 | 6 | Calendario | ⏳ |
 | 7 | Recordatorios | ⏳ |
 | 8 | Historial y estadísticas | ⏳ |
@@ -95,6 +95,8 @@ La aplicación queda en <http://127.0.0.1:8000/>
 python manage.py test apps           # ejecutar todas las pruebas
 python manage.py check               # verificar la configuración
 python manage.py createsuperuser     # crear un administrador
+python manage.py cargar_categorias   # catálogo predeterminado (idempotente)
+python manage.py cargar_datos_prueba # datos ficticios de desarrollo (§37)
 
 # Cobertura de pruebas
 coverage run manage.py test apps
