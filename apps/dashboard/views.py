@@ -8,11 +8,31 @@ from . import calendario as cal
 from . import selectors
 
 
+def _catch_up_recordatorios(request, hoy):
+    """Genera los recordatorios atrasados al abrir el dashboard (§15, §16).
+
+    La tarea programada no corre si el equipo estaba apagado, lo que en un
+    portátil pasa casi siempre. Como el proceso es idempotente por
+    restricción de base de datos, dispararlo aquí no puede duplicar nada.
+    Se limita a una vez al día por sesión para no repetir trabajo inútil.
+    """
+    marca = request.session.get("ultimo_catchup")
+    if marca == hoy.isoformat():
+        return
+
+    from apps.recordatorios.services.generacion import procesar
+
+    procesar(hoy=hoy, usuario=request.user)
+    request.session["ultimo_catchup"] = hoy.isoformat()
+
+
 @login_required
 def inicio(request):
     """Dashboard: la pantalla principal de PAYRECORD (§11)."""
     usuario = request.user
     hoy = timezone.localdate()
+
+    _catch_up_recordatorios(request, hoy)
 
     contexto = {
         "hoy": hoy,

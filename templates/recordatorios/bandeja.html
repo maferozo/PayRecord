@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block titulo %}Notificaciones — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h4 mb-1">Notificaciones</h1>
+    <p class="text-secondary small mb-0">
+      {% if no_leidas %}
+        {{ no_leidas }} sin leer
+      {% else %}
+        No tienes notificaciones sin leer
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="d-flex gap-2">
+    <a href="{% url 'recordatorios:programados' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-clock-history me-1"></i>Programados
+    </a>
+    {% if no_leidas %}
+      <form method="post" action="{% url 'recordatorios:leer_todas' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="btn-group btn-group-sm mb-3" role="group" aria-label="Filtrar notificaciones">
+  <a href="{% url 'recordatorios:bandeja' %}"
+     class="btn btn-outline-secondary {% if not filtro %}active{% endif %}">Todas</a>
+  <a href="?filtro=no-leidas"
+     class="btn btn-outline-secondary {% if filtro == 'no-leidas' %}active{% endif %}">Sin leer</a>
+</div>
+
+{% if notificaciones %}
+  <div class="pr-tarjeta">
+    {% for notificacion in notificaciones %}
+      <a href="{% url 'recordatorios:abrir' notificacion.pk %}"
+         class="d-flex align-items-start gap-3 p-3 text-decoration-none text-body
+                {% if not forloop.last %}border-bottom{% endif %}
+                {% if not notificacion.leida %}bg-light{% endif %}">
+
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+              style="width:40px; height:40px;
+                     background: {% if notificacion.leida %}var(--pr-pendiente-bg){% else %}var(--pr-proximo-bg){% endif %};
+                     color: {% if notificacion.leida %}var(--pr-pendiente){% else %}var(--pr-proximo){% endif %};">
+          <i class="bi bi-bell{% if not notificacion.leida %}-fill{% endif %}"></i>
+        </span>
+
+        <div class="flex-grow-1 min-w-0">
+          <p class="mb-1 {% if not notificacion.leida %}fw-semibold{% endif %}">
+            {{ notificacion.titulo }}
+          </p>
+          <p class="mb-1 small text-secondary">{{ notificacion.mensaje }}</p>
+          <p class="mb-0 small text-secondary">{{ notificacion.creado_en|date:"d/m/Y H:i" }}</p>
+        </div>
+
+        {% if not notificacion.leida %}
+          <span class="badge rounded-pill bg-primary flex-shrink-0">Nueva</span>
+        {% endif %}
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+    <nav class="mt-4" aria-label="Paginación">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+          </li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+
+{% else %}
+  <div class="pr-tarjeta p-5 text-center text-secondary">
+    <i class="bi bi-bell-slash fs-1 d-block mb-3"></i>
+    <p class="mb-1">Aquí aparecerán tus recordatorios.</p>
+    <p class="small mb-0">
+      Se generan solos según los avisos que configures al registrar una obligación.
+    </p>
+  </div>
+{% endif %}
+
+{% endblock %}

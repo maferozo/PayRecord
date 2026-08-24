@@ -19,8 +19,8 @@ Proyecto de trabajo de grado.
 | 4 | Obligaciones | ✅ Completada |
 | 5 | Dashboard y prioridades | ✅ Completada |
 | 6 | Calendario | ✅ Completada |
-| 7 | Recordatorios | ⏳ Siguiente |
-| 8 | Historial y estadísticas | ⏳ |
+| 7 | Recordatorios | ✅ Completada |
+| 8 | Historial y estadísticas | ⏳ Siguiente |
 | 9 | Escenario empresarial | ⏳ |
 | 10 | Insights | ⏳ |
 | 11 | Seguridad y pruebas | ⏳ |
@@ -97,6 +97,8 @@ python manage.py check               # verificar la configuración
 python manage.py createsuperuser     # crear un administrador
 python manage.py cargar_categorias   # catálogo predeterminado (idempotente)
 python manage.py cargar_datos_prueba # datos ficticios de desarrollo (§37)
+python manage.py generar_recordatorios          # proceso diario (idempotente)
+python manage.py generar_recordatorios --fecha 2026-08-25   # simular un día
 
 # Cobertura de pruebas
 coverage run manage.py test apps
@@ -104,6 +106,20 @@ coverage report
 ```
 
 ---
+
+## Tarea programada
+
+El proceso de recordatorios debe ejecutarse a diario. En Windows, con el
+Programador de tareas:
+
+- **Programa:** `c:\Kompras-V2\PayRecord\.venv\Scripts\python.exe`
+- **Argumentos:** `manage.py generar_recordatorios`
+- **Iniciar en:** `c:\Kompras-V2\PayRecord`
+- **Frecuencia:** diaria, por ejemplo a las 07:00
+
+Si el equipo está apagado a esa hora la tarea no corre, así que la aplicación
+también recupera los avisos atrasados al abrir el dashboard, una vez al día.
+Como el proceso es idempotente, ejecutarlo de más nunca duplica nada.
 
 ## Estructura
 

@@ -81,8 +81,19 @@ class Command(BaseCommand):
                                    hoy + timedelta(days=dias), codigo, prioridad, pagada,
                                    proveedor, referencia)
 
+        # Reglas de recordatorio para las obligaciones sin pagar (§13).
+        from apps.recordatorios.services.generacion import aplicar_reglas
+
+        con_reglas = 0
+        for obligacion in Obligacion.objects.filter(
+            usuario__in=[maria, gerente], pagada=False, eliminada_en__isnull=True
+        ):
+            aplicar_reglas(obligacion, [7, 3, 1, 0])
+            con_reglas += 1
+
         self.stdout.write(self.style.SUCCESS(
-            f"\nDatos de prueba listos: {creadas} obligación(es) creadas.\n"
+            f"\nDatos de prueba listos: {creadas} obligación(es) creadas, "
+            f"{con_reglas} con recordatorios configurados.\n"
             f"  Cuenta personal: maria@example.com / {CLAVE}\n"
             f"  Cuenta empresa:  gerente@comercialxyz.com / {CLAVE}\n"
         ))

@@ -11,6 +11,7 @@ urlpatterns = [
     path("cuenta/", include("apps.usuarios.urls")),
     path("", include("apps.obligaciones.urls")),
     path("dashboard/", include("apps.dashboard.urls")),
+    path("notificaciones/", include("apps.recordatorios.urls")),
 ]
 
 if settings.DEBUG:

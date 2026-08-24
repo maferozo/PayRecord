@@ -46,6 +46,20 @@ Los enlaces del menú se irán habilitando por fases.
             </a>
           </li>
 
+          <li class="nav-item me-lg-2">
+            <a class="nav-link position-relative" href="{% url 'recordatorios:bandeja' %}"
+               aria-label="Notificaciones{% if notificaciones_no_leidas %}: {{ notificaciones_no_leidas }} sin leer{% endif %}">
+              <i class="bi bi-bell"></i>
+              <span class="d-lg-none ms-1">Notificaciones</span>
+              {% if notificaciones_no_leidas %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  {{ notificaciones_no_leidas }}
+                  <span class="visually-hidden">sin leer</span>
+                </span>
+              {% endif %}
+            </a>
+          </li>
+
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
                role="button" data-bs-toggle="dropdown" aria-expanded="false">

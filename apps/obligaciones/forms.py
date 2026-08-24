@@ -144,6 +144,13 @@ class ObligacionForm(forms.ModelForm):
             "enlace_pago": "PAYRECORD no realiza pagos: solo te lleva al enlace que indiques.",
         }
 
+    recordatorios = forms.MultipleChoiceField(
+        label="Avísame antes del vencimiento",
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Recibirás una notificación dentro de PAYRECORD.",
+    )
+
     def __init__(self, *args, usuario=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
@@ -158,6 +165,43 @@ class ObligacionForm(forms.ModelForm):
 
         for campo in ("descripcion", "enlace_pago"):
             self.fields[campo].required = False
+
+        self._preparar_recordatorios(usuario)
+
+    def _preparar_recordatorios(self, usuario):
+        """Casillas de recordatorio (§13), marcadas según el caso.
+
+        Al crear se proponen las preferencias del usuario; al editar, lo que
+        esa obligación ya tenga configurado.
+        """
+        from apps.recordatorios.enums import DIAS_RECORDATORIO
+
+        self.fields["recordatorios"].choices = [
+            (str(dias), etiqueta) for dias, etiqueta in DIAS_RECORDATORIO
+        ]
+
+        if self.instance.pk:
+            actuales = self.instance.reglas_recordatorio.filter(activa=True).values_list(
+                "dias_antes", flat=True
+            )
+            self.fields["recordatorios"].initial = [str(d) for d in actuales]
+        else:
+            configuracion = getattr(usuario, "configuracion", None)
+            propuestos = configuracion.dias_recordatorio_default if configuracion else [7, 1, 0]
+            self.fields["recordatorios"].initial = [str(d) for d in propuestos]
+
+    def clean_recordatorios(self):
+        from apps.recordatorios.enums import DIAS_VALIDOS
+
+        elegidos = self.cleaned_data.get("recordatorios") or []
+        try:
+            dias = {int(valor) for valor in elegidos}
+        except (TypeError, ValueError):
+            raise forms.ValidationError("Selecciona opciones válidas.")
+
+        if not dias.issubset(set(DIAS_VALIDOS)):
+            raise forms.ValidationError("Selecciona opciones válidas.")
+        return sorted(dias, reverse=True)
 
     def clean_monto(self):
         monto = self.cleaned_data["monto"]
@@ -183,12 +227,21 @@ class ObligacionForm(forms.ModelForm):
         return self.cleaned_data["concepto"].strip()
 
     def save(self, commit=True):
+        from apps.recordatorios.services.generacion import aplicar_reglas
+
         obligacion = super().save(commit=False)
         obligacion.usuario = self.usuario
         # La empresa se copia del usuario: nunca llega desde el formulario.
         obligacion.empresa = self.usuario.empresa
+
         if commit:
             obligacion.save()
+            aplicar_reglas(obligacion, self.cleaned_data.get("recordatorios") or [])
+            # Al cambiar la fecha, los avisos de la fecha anterior dejan de valer.
+            from apps.recordatorios.services.generacion import sincronizar
+
+            sincronizar(obligacion)
+
         return obligacion
 
 
