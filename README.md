@@ -14,8 +14,8 @@ Proyecto de trabajo de grado.
 |---|---|---|
 | 0 | Análisis y arquitectura | ✅ Completada — [`docs/00-analisis-fase0.md`](docs/00-analisis-fase0.md) |
 | 1 | Configuración del proyecto | ✅ Completada |
-| 2 | Usuarios y autenticación | ⏳ Siguiente |
-| 3 | Categorías | ⏳ |
+| 2 | Usuarios y autenticación | ✅ Completada |
+| 3 | Categorías | ⏳ Siguiente |
 | 4 | Obligaciones | ⏳ |
 | 5 | Dashboard y prioridades | ⏳ |
 | 6 | Calendario | ⏳ |

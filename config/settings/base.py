@@ -33,6 +33,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "apps.core",
+    "apps.usuarios",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -94,6 +95,19 @@ else:
             },
         }
     }
+
+
+# --- Autenticación (§6) ---
+# AUTH_USER_MODEL se define antes de la primera migración y no debe cambiarse
+# después: hacerlo obligaría a reconstruir la base de datos (riesgo R14).
+
+AUTH_USER_MODEL = "usuarios.Usuario"
+
+LOGIN_URL = "usuarios:login"
+LOGIN_REDIRECT_URL = "core:inicio"
+LOGOUT_REDIRECT_URL = "core:inicio"
+
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # el enlace de recuperación dura 24 horas
 
 
 # --- Contraseñas (§6, §28) ---

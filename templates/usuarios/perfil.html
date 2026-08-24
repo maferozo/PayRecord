@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block titulo %}Mi perfil — PAYRECORD{% endblock %}
+
+{% block contenido %}
+<h1 class="h4 mb-4">Configuración de la cuenta</h1>
+
+<div class="row g-3">
+
+  <div class="col-12 col-lg-6">
+    <div class="pr-tarjeta p-4 h-100">
+      <p class="pr-etiqueta mb-3">Datos de la cuenta</p>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="seccion" value="perfil">
+        {{ form_perfil|crispy }}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </form>
+
+      <hr class="my-4">
+      <p class="mb-1 small text-secondary">
+        Tipo de cuenta:
+        <strong>{{ user.get_tipo_usuario_display }}</strong>
+      </p>
+      <a href="{% url 'usuarios:password_change' %}" class="small">Cambiar contraseña</a>
+    </div>
+  </div>
+
+  {% if form_empresa %}
+  <div class="col-12 col-lg-6">
+    <div class="pr-tarjeta p-4 h-100">
+      <p class="pr-etiqueta mb-3">Empresa</p>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="seccion" value="empresa">
+        {{ form_empresa|crispy }}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-12 col-lg-6">
+    <div class="pr-tarjeta p-4 h-100">
+      <p class="pr-etiqueta mb-3">Preferencias</p>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="seccion" value="config">
+        {{ form_configuracion|crispy }}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

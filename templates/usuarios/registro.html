@@ -1,0 +1,56 @@
+{% extends "usuarios/base_auth.html" %}
+{% load crispy_forms_tags %}
+
+{% block titulo %}Crear cuenta — PAYRECORD{% endblock %}
+{% block auth_titulo %}Crear cuenta{% endblock %}
+{% block auth_subtitulo %}Centraliza tus obligaciones y deja de perder vencimientos.{% endblock %}
+
+{% block auth_contenido %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {{ form.nombre|as_crispy_field }}
+    {{ form.email|as_crispy_field }}
+    {{ form.tipo_usuario|as_crispy_field }}
+
+    {# Los campos de empresa solo se muestran si se elige ese tipo de cuenta #}
+    <div id="bloqueEmpresa" class="border rounded p-3 mb-3 bg-light d-none">
+      <p class="pr-etiqueta mb-3">Datos de la empresa</p>
+      {{ form.nombre_empresa|as_crispy_field }}
+      {{ form.nit|as_crispy_field }}
+    </div>
+
+    {{ form.password1|as_crispy_field }}
+    {{ form.password2|as_crispy_field }}
+
+    <button type="submit" class="btn btn-primary w-100 mt-2">
+      <i class="bi bi-person-plus me-1"></i>Crear cuenta
+    </button>
+  </form>
+{% endblock %}
+
+{% block auth_pie %}
+  <p class="text-center mt-3 small text-secondary">
+    ¿Ya tienes cuenta? <a href="{% url 'usuarios:login' %}">Inicia sesión</a>
+  </p>
+{% endblock %}
+
+{% block js_extra %}
+<script>
+  // Muestra los campos de empresa solo cuando aplican.
+  // La obligatoriedad real se valida en el servidor (RegistroForm.clean).
+  (function () {
+    const bloque = document.getElementById('bloqueEmpresa');
+    const opciones = document.querySelectorAll('input[name="tipo_usuario"]');
+
+    function actualizar() {
+      const seleccionada = document.querySelector('input[name="tipo_usuario"]:checked');
+      const esEmpresa = seleccionada && seleccionada.value === 'EMPRESA';
+      bloque.classList.toggle('d-none', !esEmpresa);
+    }
+
+    opciones.forEach(o => o.addEventListener('change', actualizar));
+    actualizar();
+  })();
+</script>
+{% endblock %}
