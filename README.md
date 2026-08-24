@@ -17,8 +17,8 @@ Proyecto de trabajo de grado.
 | 2 | Usuarios y autenticación | ✅ Completada |
 | 3 | Categorías | ✅ Completada |
 | 4 | Obligaciones | ✅ Completada |
-| 5 | Dashboard y prioridades | ⏳ Siguiente |
-| 6 | Calendario | ⏳ |
+| 5 | Dashboard y prioridades | ✅ Completada |
+| 6 | Calendario | ⏳ Siguiente |
 | 7 | Recordatorios | ⏳ |
 | 8 | Historial y estadísticas | ⏳ |
 | 9 | Escenario empresarial | ⏳ |
