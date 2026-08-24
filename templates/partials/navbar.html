@@ -1,0 +1,35 @@
+{% comment %}
+Navegación principal (§23).
+Los enlaces del menú autenticado se irán habilitando por fases.
+{% endcomment %}
+<nav class="navbar navbar-expand-lg navbar-payrecord navbar-dark">
+  <div class="container">
+    <a class="navbar-brand pr-marca" href="{% url 'core:inicio' %}">
+      <i class="bi bi-shield-check me-1"></i>
+      <span class="pr-marca-pay">PAY</span><span class="pr-marca-record">RECORD</span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#menuPrincipal" aria-controls="menuPrincipal"
+            aria-expanded="false" aria-label="Abrir menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="menuPrincipal">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        {% if user.is_authenticated %}
+          {# Fase 5 en adelante: Dashboard, Obligaciones, Calendario, etc. #}
+          <li class="nav-item">
+            <span class="navbar-text text-white-50 me-3">{{ user.get_username }}</span>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <span class="navbar-text text-white-50 small">
+              Autenticación disponible en la Fase 2
+            </span>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>

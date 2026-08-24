@@ -1,0 +1,30 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}PAYRECORD{% endblock %}</title>
+
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/font/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/payrecord.css' %}">
+  {% block css_extra %}{% endblock %}
+</head>
+<body>
+
+  {% include "partials/navbar.html" %}
+
+  <main class="container py-4">
+    {% include "partials/mensajes.html" %}
+
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer class="text-center py-4 pr-etiqueta">
+    PAYRECORD &middot; Gestión centralizada de obligaciones financieras
+  </footer>
+
+  <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  {% block js_extra %}{% endblock %}
+</body>
+</html>

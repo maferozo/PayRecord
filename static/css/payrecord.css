@@ -1,0 +1,118 @@
+/* ===========================================================
+   PAYRECORD — Identidad visual (§22)
+   Paleta corta y consistente. Los colores de estado son los
+   mismos en toda la aplicación: nunca se reinterpretan.
+   =========================================================== */
+
+:root {
+  /* Marca: azul profundo = organización, control, confianza */
+  --pr-azul-900: #0F2E4C;
+  --pr-azul-700: #1B4F82;
+  --pr-azul-500: #2563EB;
+  --pr-azul-100: #DBEAFE;
+
+  /* Estados de una obligación (§9, §22) */
+  --pr-pagado: #16A34A;
+  --pr-pagado-bg: #DCFCE7;
+  --pr-proximo: #B45309;
+  --pr-proximo-bg: #FEF3C7;
+  --pr-vencido: #DC2626;
+  --pr-vencido-bg: #FEE2E2;
+  --pr-pendiente: #4B5563;
+  --pr-pendiente-bg: #F1F3F5;
+
+  /* Neutros */
+  --pr-fondo: #F6F8FB;
+  --pr-superficie: #FFFFFF;
+  --pr-borde: #E3E8EF;
+  --pr-texto: #16202B;
+  --pr-texto-suave: #5B6774;
+
+  --pr-radio: 12px;
+  --pr-sombra: 0 1px 2px rgba(16, 32, 48, .06), 0 4px 16px rgba(16, 32, 48, .05);
+}
+
+body {
+  background-color: var(--pr-fondo);
+  color: var(--pr-texto);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* --- Marca --- */
+
+.pr-marca {
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.pr-marca .pr-marca-pay { color: #FFFFFF; }
+.pr-marca .pr-marca-record { color: #7FB2E5; }
+
+.navbar-payrecord {
+  background-color: var(--pr-azul-900);
+}
+
+/* --- Superficies --- */
+
+.pr-tarjeta {
+  background: var(--pr-superficie);
+  border: 1px solid var(--pr-borde);
+  border-radius: var(--pr-radio);
+  box-shadow: var(--pr-sombra);
+}
+
+/* --- Distintivos de estado --- */
+
+.pr-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pr-estado-pagada        { color: var(--pr-pagado);    background: var(--pr-pagado-bg); }
+.pr-estado-proxima_vencer{ color: var(--pr-proximo);   background: var(--pr-proximo-bg); }
+.pr-estado-vencida       { color: var(--pr-vencido);   background: var(--pr-vencido-bg); }
+.pr-estado-pendiente     { color: var(--pr-pendiente); background: var(--pr-pendiente-bg); }
+
+/* --- Bandas de prioridad (§12) --- */
+
+.pr-prioridad-alta  { border-left: 4px solid var(--pr-vencido); }
+.pr-prioridad-media { border-left: 4px solid var(--pr-proximo); }
+.pr-prioridad-baja  { border-left: 4px solid var(--pr-pagado); }
+
+/* --- Cifras --- */
+
+.pr-cifra {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-etiqueta {
+  font-size: .8125rem;
+  color: var(--pr-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+/* --- Accesibilidad: foco siempre visible (§21) --- */
+
+a:focus-visible,
+button:focus-visible,
+.form-control:focus-visible,
+.btn:focus-visible {
+  outline: 3px solid var(--pr-azul-500);
+  outline-offset: 2px;
+}
+
+/* --- Responsive (§21) --- */
+
+@media (max-width: 576px) {
+  .pr-cifra { font-size: 1.4rem; }
+}

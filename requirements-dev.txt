@@ -1,0 +1,4 @@
+# PAYRECORD — Dependencias solo para desarrollo y pruebas
+-r requirements.txt
+
+coverage==7.15.4            # métrica de cobertura de pruebas (§36)

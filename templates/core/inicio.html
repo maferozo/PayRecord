@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load formato %}
+
+{% block titulo %}PAYRECORD — Inicio{% endblock %}
+
+{% block contenido %}
+
+<div class="pr-tarjeta p-4 p-md-5 mb-4">
+  <h1 class="h3 mb-2">Gestión centralizada de obligaciones financieras</h1>
+  <p class="text-secondary mb-0" style="max-width: 60ch;">
+    PAYRECORD reúne en un solo lugar tus pagos, sus fechas de vencimiento y sus
+    recordatorios, para que sepas qué debes pagar, cuándo y qué atender primero.
+  </p>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="pr-tarjeta p-4 h-100">
+      <p class="pr-etiqueta mb-3">Estado de la instalación</p>
+      <ul class="list-unstyled mb-0">
+        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Proyecto Django configurado</li>
+        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Variables de entorno cargadas desde <code>.env</code></li>
+        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Bootstrap e iconos servidos localmente</li>
+        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Filtros de formato activos</li>
+        <li><i class="bi bi-hourglass-split text-secondary me-2"></i>Autenticación: Fase 2</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="pr-tarjeta p-4 h-100">
+      <p class="pr-etiqueta mb-3">Convenciones visuales de estado</p>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <span class="pr-estado pr-estado-pendiente"><i class="bi bi-circle"></i>Pendiente</span>
+        <span class="pr-estado pr-estado-proxima_vencer"><i class="bi bi-exclamation-circle"></i>Próxima a vencer</span>
+        <span class="pr-estado pr-estado-vencida"><i class="bi bi-x-circle"></i>Vencida</span>
+        <span class="pr-estado pr-estado-pagada"><i class="bi bi-check-circle"></i>Pagada</span>
+      </div>
+
+      <p class="pr-etiqueta mb-1">Formato de moneda</p>
+      <p class="pr-cifra mb-0">{{ 1250000|moneda_cop }}</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
