@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block titulo %}Eliminar categoría — PAYRECORD{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6">
+    <div class="pr-tarjeta p-4 p-md-5">
+      <h1 class="h5 mb-3">¿Eliminar «{{ object.nombre }}»?</h1>
+      <p class="text-secondary">
+        Si la categoría ya tiene obligaciones asociadas no se borrará: quedará
+        desactivada para no romper tu historial ni tus estadísticas.
+      </p>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+          <a href="{% url 'obligaciones:categoria_lista' %}" class="btn btn-outline-secondary">
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

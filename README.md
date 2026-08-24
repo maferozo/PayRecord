@@ -15,8 +15,8 @@ Proyecto de trabajo de grado.
 | 0 | Análisis y arquitectura | ✅ Completada — [`docs/00-analisis-fase0.md`](docs/00-analisis-fase0.md) |
 | 1 | Configuración del proyecto | ✅ Completada |
 | 2 | Usuarios y autenticación | ✅ Completada |
-| 3 | Categorías | ⏳ Siguiente |
-| 4 | Obligaciones | ⏳ |
+| 3 | Categorías | ✅ Completada |
+| 4 | Obligaciones | ⏳ Siguiente |
 | 5 | Dashboard y prioridades | ⏳ |
 | 6 | Calendario | ⏳ |
 | 7 | Recordatorios | ⏳ |
@@ -81,6 +81,7 @@ Editar `.env` y rellenar como mínimo:
 
 ```powershell
 python manage.py migrate
+python manage.py cargar_categorias    # catálogo predeterminado (§8)
 python manage.py runserver
 ```
 

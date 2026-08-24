@@ -867,7 +867,7 @@ Se respeta tu numeración. Se añade la Fase 1 dividida por el hallazgo del ento
 | **1a** | Instalación de Python 3.12, entorno virtual, BD `payrecord` en MySQL | `python manage.py check` sin errores | 0.5 día |
 | **1b** | Proyecto Django, settings divididos, `.env`, `.gitignore`, Git inicializado, `base.html` con Bootstrap | Servidor levanta y muestra una página con estilos | 1 día |
 | **2** | App `core` + app `usuarios`: modelo `Usuario`, registro, login, logout, recuperación de contraseña, perfil, admin | Registrarse, entrar y salir. Pruebas de §36 en verde | 2–3 días |
-| **3** | `Categoria`, comando `cargar_categorias`, CRUD de personalizadas | 17 categorías cargadas; usuario crea la suya | 1 día |
+| **3** | `Categoria`, comando `cargar_categorias`, CRUD de personalizadas | 13 categorías cargadas; usuario crea la suya | 1 día |
 | **4** | `Obligacion`: modelo, manager `visibles_para`, servicio de estados, CRUD completo, marcar pagada | CRUD funcional + **prueba de aislamiento entre usuarios en verde** | 3–4 días |
 | **5** | Dashboard: selectores, tarjetas de resumen, dinero comprometido, algoritmo de prioridades | Dashboard con datos reales y motivos de prioridad | 2–3 días |
 | **6** | Calendario mensual + detalle por día | Vista de mes navegable con marcas | 1–2 días |
@@ -1017,10 +1017,14 @@ librería.
 
 **D9 — Categorías: catálogo global + personalizadas**
 
-Las 17 categorías de §8 se cargan una vez con `usuario=NULL` (compartidas, no editables por
-el usuario). El usuario puede crear las suyas con `usuario=él`.
+Las categorías de §8 se cargan una vez con `usuario=NULL` (compartidas, no editables por el
+usuario). El usuario puede crear las suyas con `usuario=él`.
 
-- *A favor:* no se duplican 17 filas por cada usuario registrado; las predeterminadas no se
+Las dos listas de §8 suman 17 entradas, pero cuatro aparecen en ambas (Servicios, Créditos,
+Impuestos, Otros). Esas cuatro se guardan una sola vez con ámbito `AMBOS`, de modo que el
+catálogo son **13 filas**, no 17.
+
+- *A favor:* no se duplican 13 filas por cada usuario registrado; las predeterminadas no se
   pueden romper.
 - *En contra:* la consulta de categorías siempre lleva `Q(usuario=None) | Q(usuario=u)`.
 - **Recomiendo: aprobar.**

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block titulo %}Categorías — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h4 mb-1">Categorías</h1>
+    <p class="text-secondary small mb-0">
+      Clasifica tus obligaciones. Las del sistema están disponibles para todos;
+      puedes añadir las tuyas.
+    </p>
+  </div>
+  <a href="{% url 'obligaciones:categoria_crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Nueva categoría
+  </a>
+</div>
+
+<section class="mb-4">
+  <p class="pr-etiqueta mb-2">Mis categorías</p>
+  {% if propias %}
+    <div class="row g-3">
+      {% for categoria in propias %}
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="pr-tarjeta p-3 h-100 d-flex align-items-center gap-3">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                  style="width:42px; height:42px; background:{{ categoria.color }}1A; color:{{ categoria.color }};">
+              <i class="bi {{ categoria.icono|default:'bi-tag' }} fs-5"></i>
+            </span>
+            <div class="flex-grow-1 min-w-0">
+              <p class="mb-0 fw-semibold text-truncate">{{ categoria.nombre }}</p>
+              <p class="mb-0 small text-secondary">Importancia {{ categoria.peso_prioridad }}/5</p>
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+              <a href="{% url 'obligaciones:categoria_editar' categoria.pk %}"
+                 class="btn btn-sm btn-outline-secondary" aria-label="Editar {{ categoria.nombre }}">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'obligaciones:categoria_eliminar' categoria.pk %}"
+                 class="btn btn-sm btn-outline-danger" aria-label="Eliminar {{ categoria.nombre }}">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="pr-tarjeta p-4 text-center text-secondary">
+      <i class="bi bi-tags fs-3 d-block mb-2"></i>
+      Todavía no has creado categorías propias. Las del sistema suelen bastar para empezar.
+    </div>
+  {% endif %}
+</section>
+
+<section>
+  <p class="pr-etiqueta mb-2">Categorías del sistema</p>
+  <div class="row g-3">
+    {% for categoria in predeterminadas %}
+      <div class="col-12 col-sm-6 col-lg-4">
+        <div class="pr-tarjeta p-3 h-100 d-flex align-items-center gap-3">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                style="width:42px; height:42px; background:{{ categoria.color }}1A; color:{{ categoria.color }};">
+            <i class="bi {{ categoria.icono|default:'bi-tag' }} fs-5"></i>
+          </span>
+          <div class="min-w-0">
+            <p class="mb-0 fw-semibold text-truncate">{{ categoria.nombre }}</p>
+            <p class="mb-0 small text-secondary">Importancia {{ categoria.peso_prioridad }}/5</p>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-warning mb-0">
+          No hay categorías predeterminadas cargadas. Ejecuta
+          <code>python manage.py cargar_categorias</code>.
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}
