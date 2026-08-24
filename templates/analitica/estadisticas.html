@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static formato %}
+
+{% block titulo %}Estadísticas — PAYRECORD{% endblock %}
+
+{% block contenido %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h4 mb-1">Estadísticas</h1>
+    <p class="text-secondary small mb-0">Cómo se comportan tus obligaciones.</p>
+  </div>
+  <a href="{% url 'obligaciones:lista' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-list-check me-1"></i>Ver historial
+  </a>
+</div>
+
+{% if not hay_datos %}
+
+  <div class="pr-tarjeta p-5 text-center text-secondary">
+    <i class="bi bi-bar-chart fs-1 d-block mb-3"></i>
+    <p class="mb-3">Todavía no hay datos suficientes para mostrar estadísticas.</p>
+    <a href="{% url 'obligaciones:crear' %}" class="btn btn-primary">
+      Registrar una obligación
+    </a>
+  </div>
+
+{% else %}
+
+  {# ---------- Cifras generales ---------- #}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="pr-tarjeta p-3 h-100">
+        <p class="pr-etiqueta mb-1">Obligaciones</p>
+        <p class="pr-cifra mb-0">{{ totales.cantidad }}</p>
+        <p class="small text-secondary mb-0">{{ totales.valor_total|moneda_cop }} en total</p>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="pr-tarjeta p-3 h-100">
+        <p class="pr-etiqueta mb-1">Pagado</p>
+        <p class="pr-cifra mb-0" style="color: var(--pr-pagado);">{{ totales.pagado|moneda_cop }}</p>
+        <p class="small text-secondary mb-0">{{ totales.cantidad_pagadas }} obligación{{ totales.cantidad_pagadas|pluralize:"es" }}</p>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="pr-tarjeta p-3 h-100">
+        <p class="pr-etiqueta mb-1">Pendiente</p>
+        <p class="pr-cifra mb-0">{{ totales.pendiente|moneda_cop }}</p>
+        <p class="small text-secondary mb-0">Sin pagar</p>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="pr-tarjeta p-3 h-100">
+        <p class="pr-etiqueta mb-1">Vencido</p>
+        <p class="pr-cifra mb-0" style="color: var(--pr-vencido);">{{ totales.vencido|moneda_cop }}</p>
+        <p class="small text-secondary mb-0">Requiere atención</p>
+      </div>
+    </div>
+  </div>
+
+  {# ---------- Progreso de pago ---------- #}
+  <div class="pr-tarjeta p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-baseline mb-2">
+      <p class="pr-etiqueta mb-0">Obligaciones pagadas</p>
+      <span class="fw-semibold">{{ totales.porcentaje_pagado }}%</span>
+    </div>
+    <div class="progress" role="progressbar"
+         aria-valuenow="{{ totales.porcentaje_pagado }}" aria-valuemin="0" aria-valuemax="100"
+         aria-label="Porcentaje de obligaciones pagadas" style="height: 10px;">
+      <div class="progress-bar" style="width: {{ totales.porcentaje_pagado }}%; background: var(--pr-pagado);"></div>
+    </div>
+
+    {% if cumplimiento.porcentaje is not None %}
+      <p class="small text-secondary mb-0 mt-3">
+        De las {{ cumplimiento.total }} que ya pagaste,
+        <strong>{{ cumplimiento.a_tiempo }}</strong> fueron a tiempo
+        ({{ cumplimiento.porcentaje }}%){% if cumplimiento.tarde %} y
+        {{ cumplimiento.tarde }} después del vencimiento{% endif %}.
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-3">
+
+    {# ---------- Obligaciones por estado ---------- #}
+    <div class="col-12 col-lg-5">
+      <div class="pr-tarjeta p-4 h-100">
+        <p class="pr-etiqueta mb-3">Obligaciones por estado</p>
+        <div style="position: relative; height: 260px;">
+          <canvas id="graficoEstado" aria-label="Distribución de obligaciones por estado"
+                  role="img"></canvas>
+        </div>
+
+        <table class="table table-sm mt-3 mb-0">
+          <caption class="visually-hidden">Cantidad y valor por estado</caption>
+          <tbody>
+            {% for fila in por_estado %}
+              <tr>
+                <td class="small">{{ fila.etiqueta }}</td>
+                <td class="small text-end">{{ fila.cantidad }}</td>
+                <td class="small text-end fw-semibold">{{ fila.total|moneda_cop }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ---------- Valor por categoría ---------- #}
+    <div class="col-12 col-lg-7">
+      <div class="pr-tarjeta p-4 h-100">
+        <p class="pr-etiqueta mb-3">Valor por categoría</p>
+        <div style="position: relative; height: 300px;">
+          <canvas id="graficoCategoria" aria-label="Valor total por categoría" role="img"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ---------- Evolución ---------- #}
+  <div class="pr-tarjeta p-4 mb-3">
+    <p class="pr-etiqueta mb-1">Evolución de los últimos 6 meses</p>
+    <p class="text-secondary small mb-3">
+      Agrupado por mes de vencimiento.
+    </p>
+    <div style="position: relative; height: 300px;">
+      <canvas id="graficoEvolucion" aria-label="Evolución mensual de pagos" role="img"></canvas>
+    </div>
+  </div>
+
+  {# ---------- Detalle por categoría ---------- #}
+  <div class="pr-tarjeta p-4">
+    <p class="pr-etiqueta mb-3">Detalle por categoría</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Categoría</th>
+            <th scope="col" class="text-end">Cantidad</th>
+            <th scope="col" class="text-end">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in por_categoria %}
+            <tr>
+              <td>
+                <span class="rounded-circle d-inline-block me-2"
+                      style="width:10px; height:10px; background: {{ fila.categoria__color }};"></span>
+                {{ fila.categoria__nombre }}
+              </td>
+              <td class="text-end">{{ fila.cantidad }}</td>
+              <td class="text-end fw-semibold">{{ fila.total|moneda_cop }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{ grafico_estado|json_script:"datosEstado" }}
+  {{ grafico_categoria|json_script:"datosCategoria" }}
+  {{ grafico_evolucion|json_script:"datosEvolucion" }}
+
+{% endif %}
+
+{% endblock %}
+
+{% block js_extra %}
+{% if hay_datos %}
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/estadisticas.js' %}"></script>
+{% endif %}
+{% endblock %}

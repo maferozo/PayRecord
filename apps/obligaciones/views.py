@@ -140,6 +140,10 @@ class ObligacionListView(ObligacionQuerysetMixin, ListView):
                 consulta = consulta.filter(categoria=datos["categoria"])
             if datos.get("prioridad"):
                 consulta = consulta.filter(prioridad_usuario=datos["prioridad"])
+            if datos.get("desde"):
+                consulta = consulta.filter(fecha_vencimiento__gte=datos["desde"])
+            if datos.get("hasta"):
+                consulta = consulta.filter(fecha_vencimiento__lte=datos["hasta"])
 
         return consulta.order_by("pagada", "fecha_vencimiento", "-monto")
 

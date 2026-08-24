@@ -12,6 +12,7 @@ urlpatterns = [
     path("", include("apps.obligaciones.urls")),
     path("dashboard/", include("apps.dashboard.urls")),
     path("notificaciones/", include("apps.recordatorios.urls")),
+    path("estadisticas/", include("apps.analitica.urls")),
 ]
 
 if settings.DEBUG:

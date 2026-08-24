@@ -204,15 +204,18 @@ class EnvioTests(BaseRecordatorios):
         }
         for dias, texto in casos.items():
             with self.subTest(dias=dias):
-                Notificacion.objects.all().delete()
-                Recordatorio.objects.all().delete()
                 obligacion = self.crear_obligacion(
                     concepto=f"Servicio {dias}", vencimiento=hoy + timedelta(days=dias)
                 )
                 self.crear_regla(obligacion, dias)
                 procesar(hoy=hoy)
 
-                self.assertIn(texto, Notificacion.objects.first().titulo.lower())
+                # Se filtra por concepto: en la base conviven las de las
+                # demás iteraciones del bucle.
+                notificacion = Notificacion.objects.get(
+                    titulo__contains=f"Servicio {dias}"
+                )
+                self.assertIn(texto, notificacion.titulo.lower())
 
     def test_un_aviso_recuperado_tarde_no_dice_que_vence_manana(self):
         """Si el equipo estuvo apagado, el aviso llega con la verdad de hoy."""

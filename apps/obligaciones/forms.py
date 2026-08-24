@@ -267,6 +267,16 @@ class FiltroObligacionesForm(forms.Form):
         required=False,
         choices=[("", "Cualquier prioridad")] + list(Prioridad.choices),
     )
+    desde = forms.DateField(
+        label="Desde",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+    )
+    hasta = forms.DateField(
+        label="Hasta",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+    )
 
     def __init__(self, *args, usuario=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -277,3 +287,11 @@ class FiltroObligacionesForm(forms.Form):
         ]
         if usuario:
             self.fields["categoria"].queryset = Categoria.objects.disponibles_para(usuario)
+
+    def clean(self):
+        datos = super().clean()
+        desde, hasta = datos.get("desde"), datos.get("hasta")
+
+        if desde and hasta and desde > hasta:
+            self.add_error("hasta", "La fecha final no puede ser anterior a la inicial.")
+        return datos

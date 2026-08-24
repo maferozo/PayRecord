@@ -29,6 +29,17 @@
       </button>
     </div>
   </div>
+
+  <div class="row g-2 align-items-end mt-1">
+    <div class="col-6 col-md-3">{{ filtros.desde|as_crispy_field }}</div>
+    <div class="col-6 col-md-3">{{ filtros.hasta|as_crispy_field }}</div>
+    <div class="col-6 col-md-3">{{ filtros.prioridad|as_crispy_field }}</div>
+    <div class="col-6 col-md-3 d-grid">
+      <a href="{% url 'obligaciones:lista' %}" class="btn btn-outline-secondary">
+        Limpiar filtros
+      </a>
+    </div>
+  </div>
 </form>
 
 {% if obligaciones %}
