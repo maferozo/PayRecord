@@ -21,8 +21,8 @@ Proyecto de trabajo de grado.
 | 6 | Calendario | ✅ Completada |
 | 7 | Recordatorios | ✅ Completada |
 | 8 | Historial y estadísticas | ✅ Completada — **MVP funcional** |
-| 9 | Escenario empresarial | ⏳ Siguiente |
-| 10 | Insights | ⏳ |
+| 9 | Escenario empresarial | ✅ Completada |
+| 10 | Insights | ⏳ Siguiente |
 | 11 | Seguridad y pruebas | ⏳ |
 | 12 | Documentación | ⏳ |
 

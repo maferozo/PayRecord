@@ -40,6 +40,13 @@
               <div class="col-12 col-sm-6">{{ form.proveedor|as_crispy_field }}</div>
               <div class="col-12 col-sm-6">{{ form.referencia|as_crispy_field }}</div>
             </div>
+
+            {# Sugerencias para escribir siempre igual el mismo proveedor #}
+            <datalist id="listaProveedores">
+              {% for nombre in form.sugerencias_proveedor %}
+                <option value="{{ nombre }}"></option>
+              {% endfor %}
+            </datalist>
           </div>
         {% endif %}
 

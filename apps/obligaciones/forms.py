@@ -162,6 +162,12 @@ class ObligacionForm(forms.ModelForm):
         if not usuario.es_empresa:
             del self.fields["proveedor"]
             del self.fields["referencia"]
+        else:
+            # Sugerencias de proveedores ya usados, para escribirlos igual.
+            from .services.proveedores import sugerencias
+
+            self.sugerencias_proveedor = sugerencias(usuario)
+            self.fields["proveedor"].widget.attrs["list"] = "listaProveedores"
 
         for campo in ("descripcion", "enlace_pago"):
             self.fields[campo].required = False
@@ -225,6 +231,12 @@ class ObligacionForm(forms.ModelForm):
 
     def clean_concepto(self):
         return self.cleaned_data["concepto"].strip()
+
+    def clean_proveedor(self):
+        """Reutiliza la grafía ya usada para no multiplicar variantes (§26)."""
+        from .services.proveedores import normalizar
+
+        return normalizar(self.cleaned_data.get("proveedor"), self.usuario)
 
     def save(self, commit=True):
         from apps.recordatorios.services.generacion import aplicar_reglas

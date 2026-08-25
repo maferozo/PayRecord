@@ -4,12 +4,23 @@ from django.db.models import ProtectedError, Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views import View
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
+
+from apps.core.mixins import SoloEmpresaMixin
 
 from .enums import EstadoObligacion
 from .forms import CategoriaForm, FiltroObligacionesForm, ObligacionForm
 from .models import Categoria, Obligacion
+from .services import proveedores
 
 
 # ===========================================================
@@ -219,6 +230,57 @@ class ObligacionDeleteView(ObligacionQuerysetMixin, DeleteView):
         obligacion.eliminar_logicamente()
         messages.success(self.request, f'"{obligacion.concepto}" eliminada.')
         return HttpResponseRedirect(self.success_url)
+
+
+class ProveedorListView(SoloEmpresaMixin, TemplateView):
+    """Qué se le debe a cada proveedor (§26).
+
+    No hay modelo Proveedor: se agrupa por el texto del campo, que el
+    formulario normaliza al guardar (ver services/proveedores.py y D4).
+    """
+
+    template_name = "obligaciones/proveedor_lista.html"
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        hoy = timezone.localdate()
+
+        filas = proveedores.resumen(self.request.user, hoy)
+
+        contexto["proveedores"] = filas
+        contexto["total_pendiente"] = sum((f["pendiente"] or 0) for f in filas)
+        contexto["total_vencido"] = sum((f["vencido"] or 0) for f in filas)
+        contexto["sin_proveedor"] = (
+            Obligacion.objects.para_usuario(self.request.user, hoy=hoy)
+            .filter(proveedor="")
+            .count()
+        )
+        return contexto
+
+
+class ObligacionesDeProveedorView(SoloEmpresaMixin, ListView):
+    """Detalle de un proveedor: sus obligaciones."""
+
+    template_name = "obligaciones/proveedor_detalle.html"
+    context_object_name = "obligaciones"
+
+    def get_queryset(self):
+        self.proveedor = self.kwargs["nombre"]
+        return (
+            Obligacion.objects.para_usuario(self.request.user)
+            .filter(proveedor__iexact=self.proveedor)
+            .select_related("categoria")
+            .order_by("pagada", "fecha_vencimiento")
+        )
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        obligaciones = contexto["obligaciones"]
+
+        contexto["proveedor"] = self.proveedor
+        contexto["total"] = sum(o.monto for o in obligaciones)
+        contexto["pendiente"] = sum(o.monto for o in obligaciones if not o.pagada)
+        return contexto
 
 
 class CambiarEstadoPagoView(LoginRequiredMixin, View):

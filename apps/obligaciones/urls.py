@@ -18,4 +18,9 @@ urlpatterns = [
     path("obligaciones/<int:pk>/editar/", views.ObligacionUpdateView.as_view(), name="editar"),
     path("obligaciones/<int:pk>/eliminar/", views.ObligacionDeleteView.as_view(), name="eliminar"),
     path("obligaciones/<int:pk>/pago/", views.CambiarEstadoPagoView.as_view(), name="cambiar_pago"),
+
+    # --- Proveedores (solo cuentas de empresa) ---
+    path("proveedores/", views.ProveedorListView.as_view(), name="proveedor_lista"),
+    path("proveedores/<str:nombre>/", views.ObligacionesDeProveedorView.as_view(),
+         name="proveedor_detalle"),
 ]

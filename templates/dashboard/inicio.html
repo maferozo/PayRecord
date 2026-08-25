@@ -163,15 +163,21 @@
     {# ---------- Proveedores (solo empresa) ---------- #}
     {% if proveedores %}
       <div class="pr-tarjeta p-4">
-        <p class="pr-etiqueta mb-3">Principales proveedores</p>
+        <div class="d-flex justify-content-between align-items-baseline mb-3">
+          <p class="pr-etiqueta mb-0">Principales proveedores</p>
+          <a href="{% url 'obligaciones:proveedor_lista' %}" class="small text-decoration-none">
+            Ver todos
+          </a>
+        </div>
         {% for fila in proveedores %}
-          <div class="d-flex align-items-center gap-2 py-1">
+          <a href="{% url 'obligaciones:proveedor_detalle' fila.proveedor %}"
+             class="d-flex align-items-center gap-2 py-1 text-decoration-none text-body">
             <i class="bi bi-truck text-secondary flex-shrink-0"></i>
             <span class="flex-grow-1 small text-truncate">{{ fila.proveedor }}</span>
             <span class="small fw-semibold" style="font-variant-numeric: tabular-nums;">
               {{ fila.total|moneda_cop }}
             </span>
-          </div>
+          </a>
         {% endfor %}
       </div>
     {% endif %}
