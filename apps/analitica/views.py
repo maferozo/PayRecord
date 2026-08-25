@@ -7,6 +7,7 @@ from django.utils import timezone
 from apps.obligaciones.enums import EstadoObligacion
 
 from . import selectors
+from .services import insights as servicio_insights
 
 # Los colores de estado son los mismos que en el resto de la aplicación (§22):
 # un gráfico que use otra paleta obliga a releer la leyenda.
@@ -62,3 +63,20 @@ def estadisticas(request):
         "grafico_evolucion": json.dumps(grafico_evolucion),
     }
     return render(request, "analitica/estadisticas.html", contexto)
+
+
+@login_required
+def insights(request):
+    """PAYRECORD Insights (§19).
+
+    Observaciones derivadas por reglas de los datos del usuario. No hay
+    modelo de IA detrás y la plantilla lo dice explícitamente: presentarlo
+    de otro modo sería simular algo que no existe.
+    """
+    hoy = timezone.localdate()
+
+    return render(request, "analitica/insights.html", {
+        "hoy": hoy,
+        "insights": servicio_insights.generar(request.user, hoy),
+        "total_reglas": len(servicio_insights.REGLAS),
+    })
