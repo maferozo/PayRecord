@@ -1,0 +1,23 @@
+# Configuración de cobertura de pruebas (§36)
+#   coverage run manage.py test apps
+#   coverage report
+#   coverage html      -> informe navegable en htmlcov/
+
+[run]
+source = apps
+branch = True
+omit =
+    */migrations/*
+    */tests/*
+    */__init__.py
+    */apps.py
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 1
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    @abstractmethod

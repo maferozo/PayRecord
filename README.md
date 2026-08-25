@@ -23,8 +23,8 @@ Proyecto de trabajo de grado.
 | 8 | Historial y estadísticas | ✅ Completada — **MVP funcional** |
 | 9 | Escenario empresarial | ✅ Completada |
 | 10 | Insights | ✅ Completada |
-| 11 | Seguridad y pruebas | ⏳ Siguiente |
-| 12 | Documentación | ⏳ |
+| 11 | Seguridad y pruebas | ✅ Completada — 346 pruebas, 95.8% de cobertura |
+| 12 | Documentación | ⏳ Siguiente |
 
 ---
 
@@ -101,9 +101,18 @@ python manage.py generar_recordatorios          # proceso diario (idempotente)
 python manage.py generar_recordatorios --fecha 2026-08-25   # simular un día
 
 # Cobertura de pruebas
-coverage run manage.py test apps
+coverage run manage.py test apps --noinput
 coverage report
+coverage html        # informe navegable en htmlcov/index.html
+
+# Revisión de seguridad antes de desplegar
+$env:DJANGO_SETTINGS_MODULE = "config.settings.production"
+python manage.py check --deploy
 ```
+
+> Con `HTTPS_ACTIVO=True` en el `.env`, `check --deploy` no reporta ningún aviso.
+> Sin HTTPS quedan cuatro, todos relativos a SSL: activarlos sin certificado
+> dejaría la aplicación inaccesible.
 
 ---
 
