@@ -24,14 +24,30 @@ Proyecto de trabajo de grado.
 | 9 | Escenario empresarial | ✅ Completada |
 | 10 | Insights | ✅ Completada |
 | 11 | Seguridad y pruebas | ✅ Completada — 346 pruebas, 95.8% de cobertura |
-| 12 | Documentación | ⏳ Siguiente |
+| 12 | Documentación | ✅ Completada |
+
+**Las doce fases están cerradas.** La aplicación cubre por completo el MVP
+definido en el análisis.
+
+---
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [Análisis y decisiones](docs/00-analisis-fase0.md) | Arquitectura propuesta, modelo E-R, riesgos y las 10 decisiones de diseño |
+| [Arquitectura](docs/arquitectura.md) | Capas, apps, invariantes del sistema y puntos de extensión |
+| [Modelo de datos](docs/modelo-datos.md) | Las 8 tablas, restricciones e integridad referencial |
+| [Casos de uso](docs/casos-de-uso.md) | Los 18 casos, cada uno con la prueba que lo verifica |
+| [Manual de usuario](docs/manual-usuario.md) | Guía funcional para quien usa la aplicación |
+| [Informe de pruebas](docs/pruebas.md) | Cobertura, casos exigidos por la especificación y limitaciones |
 
 ---
 
 ## Requisitos
 
 - **Python 3.12.x**
-- **MySQL 8.0**
+- **MySQL 8.0 o superior** (probado en 8.4)
 - Git
 
 ---
@@ -157,5 +173,27 @@ La arquitectura, el modelo de datos y las decisiones de diseño están explicada
 
 ## Tecnologías
 
-Python 3.12 · Django 5.2 LTS · MySQL 8.0 · HTML5 · CSS3 · JavaScript · Bootstrap 5.3 ·
+Python 3.12 · Django 5.2 LTS · MySQL 8.4 · HTML5 · CSS3 · JavaScript · Bootstrap 5.3 ·
 Chart.js 4.4
+
+Sin Docker, sin Celery, sin npm. Cuatro dependencias de producción.
+
+---
+
+## Qué hace distinto a PAYRECORD
+
+No es un CRUD de pagos. Tres cosas concretas:
+
+**Los estados no se actualizan a mano.** Se derivan de la fecha y de si está
+pagada, en Python y en SQL, con una prueba que compara ambos caminos. Nunca
+quedan desfasados.
+
+**Las prioridades se explican.** El algoritmo da un puntaje de 0 a 100 y,
+sobre todo, **los motivos en texto**: «vence mañana», «monto alto frente a
+tus obligaciones pendientes». Es análisis determinístico, no IA simulada.
+
+**Los recordatorios no se duplican, y la garantía está en la base de datos.**
+Una restricción única sobre `(obligación, días, fecha, canal)`, no una
+comprobación en Python que podría fallar por concurrencia. Eso permite
+además recuperar los avisos atrasados al abrir el dashboard, resolviendo que
+la tarea programada no corra con el equipo apagado.
