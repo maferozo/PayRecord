@@ -43,8 +43,8 @@
     {% for notificacion in notificaciones %}
       <a href="{% url 'recordatorios:abrir' notificacion.pk %}"
          class="d-flex align-items-start gap-3 p-3 text-decoration-none text-body
-                {% if not forloop.last %}border-bottom{% endif %}
-                {% if not notificacion.leida %}bg-light{% endif %}">
+                {% if not forloop.last %}border-bottom{% endif %}"
+         {% if not notificacion.leida %}style="background: var(--pr-acento-suave);"{% endif %}>
 
         <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
               style="width:40px; height:40px;

@@ -19,12 +19,18 @@
 </div>
 
 {# ---------- Dinero comprometido ---------- #}
-<div class="pr-tarjeta p-4 mb-3">
-  <p class="pr-etiqueta mb-1">Dinero comprometido</p>
-  <p class="pr-cifra mb-1">{{ resumen.comprometido|moneda_cop }}</p>
-  <p class="text-secondary small mb-0">
-    Es el total de lo que aún no has pagado.
-  </p>
+<div class="pr-tarjeta pr-tarjeta-destacada p-4 mb-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <p class="pr-etiqueta mb-1">Dinero comprometido</p>
+      <p class="pr-cifra mb-1">{{ resumen.comprometido|moneda_cop }}</p>
+      <p class="small mb-0" style="color: rgba(255,255,255,.78);">
+        Es el total de lo que aún no has pagado.
+      </p>
+    </div>
+    <i class="bi bi-wallet2 d-none d-sm-block"
+       style="font-size: 3rem; color: rgba(255,255,255,.28);"></i>
+  </div>
 </div>
 
 {# ---------- Resumen por estado ---------- #}
@@ -32,7 +38,7 @@
   {% with r=resumen %}
   <div class="col-6 col-lg-3">
     <a href="{% url 'obligaciones:lista' %}?estado=VENCIDA" class="text-decoration-none">
-      <div class="pr-tarjeta p-3 h-100">
+      <div class="pr-tarjeta pr-tarjeta-enlace p-3 h-100">
         <span class="pr-estado pr-estado-vencida mb-2"><i class="bi bi-x-circle"></i>Vencidas</span>
         <p class="pr-cifra mb-0">{{ r.vencidas.cantidad }}</p>
         <p class="small text-secondary mb-0">{{ r.vencidas.total|moneda_cop }}</p>

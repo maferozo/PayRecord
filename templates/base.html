@@ -1,9 +1,26 @@
 {% load static %}<!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>{% block titulo %}PAYRECORD{% endblock %}</title>
+
+  {% comment %}
+  El tema se aplica ANTES de pintar. Si esto fuera al final del body, la
+  página aparecería un instante en claro antes de pasar a oscuro.
+  {% endcomment %}
+  <script>
+    (function () {
+      try {
+        var guardado = localStorage.getItem("payrecord-tema");
+        var sistema = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-bs-theme", guardado || sistema);
+      } catch (e) {
+        document.documentElement.setAttribute("data-bs-theme", "light");
+      }
+    })();
+  </script>
 
   <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/font/bootstrap-icons.min.css' %}">
@@ -12,19 +29,30 @@
 </head>
 <body>
 
-  {% include "partials/navbar.html" %}
+<div class="pr-app{% if not user.is_authenticated %} pr-app-publica{% endif %}">
 
-  <main class="container py-4">
-    {% include "partials/mensajes.html" %}
+  {% if user.is_authenticated %}
+    {% include "partials/sidebar.html" %}
+    <div class="pr-velo" id="velo" aria-hidden="true"></div>
+  {% endif %}
 
-    {% block contenido %}{% endblock %}
-  </main>
+  <div class="pr-principal">
+    {% include "partials/topbar.html" %}
 
-  <footer class="text-center py-4 pr-etiqueta">
-    PAYRECORD &middot; Gestión centralizada de obligaciones financieras
-  </footer>
+    <main class="pr-contenido{% if not user.is_authenticated %} mx-auto{% endif %}">
+      {% include "partials/mensajes.html" %}
+      {% block contenido %}{% endblock %}
+    </main>
+
+    <footer class="pr-pie{% if not user.is_authenticated %} text-center{% endif %}">
+      PAYRECORD &middot; Gestión centralizada de obligaciones financieras
+    </footer>
+  </div>
+</div>
 
   <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'js/tema.js' %}"></script>
+  <script src="{% static 'js/navegacion.js' %}"></script>
   {% block js_extra %}{% endblock %}
 </body>
 </html>

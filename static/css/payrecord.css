@@ -1,58 +1,393 @@
 /* ===========================================================
-   PAYRECORD — Identidad visual (§22)
-   Paleta corta y consistente. Los colores de estado son los
-   mismos en toda la aplicación: nunca se reinterpretan.
+   PAYRECORD — Sistema de diseño
+   -----------------------------------------------------------
+   Un único juego de tokens con dos temas. El tema se fija en
+   <html data-bs-theme="light|dark">, que además hace que los
+   componentes de Bootstrap 5.3 se adapten solos.
    =========================================================== */
 
-:root {
-  /* Marca: azul profundo = organización, control, confianza */
-  --pr-azul-900: #0F2E4C;
-  --pr-azul-700: #1B4F82;
-  --pr-azul-500: #2563EB;
-  --pr-azul-100: #DBEAFE;
+/* --- Tokens: tema claro --- */
+:root,
+[data-bs-theme="light"] {
+  /* Marca */
+  --pr-acento:        #5B5BD6;
+  --pr-acento-fuerte: #4744C4;
+  --pr-acento-claro:  #8B8BF0;
+  --pr-acento-suave:  rgba(91, 91, 214, .10);
+
+  /* Superficies. El fondo tiene un tinte azulado: nunca blanco puro. */
+  --pr-fondo:          #EDF0F9;
+  --pr-fondo-degradado: radial-gradient(1200px 600px at 15% -10%, #E2E6FA 0%, transparent 60%),
+                        radial-gradient(900px 500px at 95% 0%, #E6F0FB 0%, transparent 55%);
+  --pr-superficie:     #FFFFFF;
+  --pr-superficie-2:   #F5F7FD;
+  --pr-borde:          #E0E5F2;
+  --pr-borde-fuerte:   #CBD3E8;
+
+  /* Texto */
+  --pr-texto:       #141A2E;
+  --pr-texto-suave: #5A6683;
 
   /* Estados de una obligación (§9, §22) */
-  --pr-pagado: #16A34A;
-  --pr-pagado-bg: #DCFCE7;
-  --pr-proximo: #B45309;
-  --pr-proximo-bg: #FEF3C7;
-  --pr-vencido: #DC2626;
-  --pr-vencido-bg: #FEE2E2;
-  --pr-pendiente: #4B5563;
-  --pr-pendiente-bg: #F1F3F5;
+  --pr-pagado:        #15803D;
+  --pr-pagado-bg:     #DCFCE7;
+  --pr-proximo:       #B45309;
+  --pr-proximo-bg:    #FEF3C7;
+  --pr-vencido:       #C81E1E;
+  --pr-vencido-bg:    #FEE2E2;
+  --pr-pendiente:     #4B5568;
+  --pr-pendiente-bg:  #EAEEF6;
 
-  /* Neutros */
-  --pr-fondo: #F6F8FB;
-  --pr-superficie: #FFFFFF;
-  --pr-borde: #E3E8EF;
-  --pr-texto: #16202B;
-  --pr-texto-suave: #5B6774;
-
-  --pr-radio: 12px;
-  --pr-sombra: 0 1px 2px rgba(16, 32, 48, .06), 0 4px 16px rgba(16, 32, 48, .05);
+  --pr-sombra:    0 1px 2px rgba(20, 26, 46, .05), 0 6px 20px rgba(20, 26, 46, .06);
+  --pr-sombra-lg: 0 4px 12px rgba(20, 26, 46, .08), 0 18px 48px rgba(20, 26, 46, .10);
 }
+
+/* --- Tokens: tema oscuro --- */
+[data-bs-theme="dark"] {
+  --pr-acento:        #8B8BF5;
+  --pr-acento-fuerte: #A5A5FF;
+  --pr-acento-claro:  #6E6EE0;
+  --pr-acento-suave:  rgba(139, 139, 245, .16);
+
+  --pr-fondo:          #0A0E1C;
+  --pr-fondo-degradado: radial-gradient(1200px 600px at 15% -10%, #171B3A 0%, transparent 60%),
+                        radial-gradient(900px 500px at 95% 0%, #0E2038 0%, transparent 55%);
+  --pr-superficie:     #141A2E;
+  --pr-superficie-2:   #1B2238;
+  --pr-borde:          #28314B;
+  --pr-borde-fuerte:   #38435F;
+
+  --pr-texto:       #E9EDF8;
+  --pr-texto-suave: #96A1BC;
+
+  /* Los colores de estado se aclaran: los tonos oscuros no contrastan
+     sobre fondo oscuro. El significado no cambia. */
+  --pr-pagado:        #4ADE80;
+  --pr-pagado-bg:     rgba(74, 222, 128, .14);
+  --pr-proximo:       #FBBF24;
+  --pr-proximo-bg:    rgba(251, 191, 36, .14);
+  --pr-vencido:       #F87171;
+  --pr-vencido-bg:    rgba(248, 113, 113, .14);
+  --pr-pendiente:     #9AA5BF;
+  --pr-pendiente-bg:  rgba(154, 165, 191, .14);
+
+  --pr-sombra:    0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .35);
+  --pr-sombra-lg: 0 4px 12px rgba(0, 0, 0, .4), 0 18px 48px rgba(0, 0, 0, .5);
+}
+
+/* Medidas compartidas */
+:root {
+  --pr-radio:     14px;
+  --pr-radio-sm:  10px;
+  --pr-sidebar:   264px;
+  --pr-topbar:    64px;
+  --pr-transicion: 180ms cubic-bezier(.4, 0, .2, 1);
+}
+
+
+/* ===========================================================
+   Base
+   =========================================================== */
+
+* { scrollbar-color: var(--pr-borde-fuerte) transparent; }
 
 body {
+  min-height: 100vh;
   background-color: var(--pr-fondo);
+  background-image: var(--pr-fondo-degradado);
+  background-attachment: fixed;
   color: var(--pr-texto);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* --- Marca --- */
+a { color: var(--pr-acento); }
+a:hover { color: var(--pr-acento-fuerte); }
+
+/* Evita el parpadeo de color al cambiar de tema */
+body, .pr-tarjeta, .pr-sidebar, .pr-topbar {
+  transition: background-color var(--pr-transicion), border-color var(--pr-transicion);
+}
+
+
+/* ===========================================================
+   Estructura: sidebar + contenido
+   =========================================================== */
+
+.pr-app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.pr-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1045;
+  width: var(--pr-sidebar);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(170deg, #191F3D 0%, #221B44 55%, #1A1B38 100%);
+  border-right: 1px solid rgba(255, 255, 255, .06);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+[data-bs-theme="dark"] .pr-sidebar {
+  background: linear-gradient(170deg, #10142A 0%, #16112E 55%, #0F1226 100%);
+}
+
+.pr-principal {
+  flex: 1;
+  min-width: 0;               /* deja que el contenido encoja */
+  margin-left: var(--pr-sidebar);
+  display: flex;
+  flex-direction: column;
+}
+
+.pr-contenido {
+  flex: 1;
+  padding: 1.75rem;
+  max-width: 1400px;
+  width: 100%;
+}
+
+/* Sin sesión no hay menú lateral: el contenido ocupa todo el ancho. */
+.pr-app-publica .pr-principal { margin-left: 0; }
+.pr-app-publica .pr-contenido { max-width: 1100px; }
+
+.pr-pie {
+  padding: 1.5rem 1.75rem 2rem;
+  color: var(--pr-texto-suave);
+  font-size: .8125rem;
+}
+
+
+/* --- Marca dentro del sidebar --- */
 
 .pr-marca {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 1.25rem 1.35rem;
+  text-decoration: none;
   font-weight: 700;
-  letter-spacing: .5px;
+  letter-spacing: .4px;
+  font-size: 1.05rem;
 }
 
-.pr-marca .pr-marca-pay { color: #FFFFFF; }
-.pr-marca .pr-marca-record { color: #7FB2E5; }
-
-.navbar-payrecord {
-  background-color: var(--pr-azul-900);
+.pr-marca-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--pr-acento) 0%, #8B5CF6 100%);
+  color: #fff;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(91, 91, 214, .45);
 }
 
-/* --- Superficies --- */
+.pr-marca-pay    { color: #FFFFFF; }
+.pr-marca-record { color: #A8AEF5; }
+
+
+/* --- Navegación --- */
+
+.pr-nav {
+  padding: .5rem .85rem 1.5rem;
+  flex: 1;
+}
+
+.pr-nav-titulo {
+  padding: 1.1rem .55rem .45rem;
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .9px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .38);
+}
+
+.pr-nav-enlace {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .6rem .7rem;
+  margin-bottom: 2px;
+  border-radius: var(--pr-radio-sm);
+  color: rgba(255, 255, 255, .72);
+  text-decoration: none;
+  font-size: .9rem;
+  font-weight: 500;
+  transition: background-color var(--pr-transicion), color var(--pr-transicion);
+}
+
+.pr-nav-enlace i {
+  font-size: 1.05rem;
+  width: 1.35rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pr-nav-enlace:hover,
+.pr-nav-enlace:focus-visible {
+  background: rgba(255, 255, 255, .07);
+  color: #FFFFFF;
+}
+
+/* La sección actual se marca con fondo y una barra a la izquierda:
+   el color por sí solo no basta para quien no lo distingue (§21). */
+.pr-nav-enlace.activo {
+  position: relative;
+  background: rgba(139, 139, 245, .20);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.pr-nav-enlace.activo::before {
+  content: "";
+  position: absolute;
+  left: -.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 3px 3px 0;
+  background: var(--pr-acento-claro);
+}
+
+.pr-nav-contador {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 .35rem;
+  border-radius: 999px;
+  background: #E5484D;
+  color: #fff;
+  font-size: .6875rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 20px;
+}
+
+/* Tarjeta de usuario al pie del sidebar */
+.pr-sidebar-pie {
+  padding: .85rem;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.pr-usuario {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  width: 100%;
+  padding: .55rem .6rem;
+  border: 0;
+  border-radius: var(--pr-radio-sm);
+  background: rgba(255, 255, 255, .06);
+  color: #fff;
+  text-align: left;
+  transition: background-color var(--pr-transicion);
+}
+
+.pr-usuario:hover { background: rgba(255, 255, 255, .12); }
+
+.pr-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pr-acento) 0%, #8B5CF6 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: .8125rem;
+  flex-shrink: 0;
+}
+
+.pr-usuario-nombre {
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pr-usuario-tipo {
+  font-size: .7rem;
+  color: rgba(255, 255, 255, .55);
+}
+
+
+/* ===========================================================
+   Barra superior
+   =========================================================== */
+
+.pr-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  height: var(--pr-topbar);
+  padding: 0 1.75rem;
+  background: color-mix(in srgb, var(--pr-superficie) 82%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--pr-borde);
+}
+
+.pr-topbar-titulo {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pr-icono-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--pr-borde);
+  border-radius: var(--pr-radio-sm);
+  background: var(--pr-superficie);
+  color: var(--pr-texto-suave);
+  font-size: 1.05rem;
+  transition: all var(--pr-transicion);
+}
+
+.pr-icono-boton:hover {
+  border-color: var(--pr-acento);
+  color: var(--pr-acento);
+  background: var(--pr-acento-suave);
+}
+
+.pr-punto-aviso {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #E5484D;
+  color: #fff;
+  font-size: .625rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* El botón de menú solo existe en pantallas pequeñas */
+.pr-boton-menu { display: none; }
+
+
+/* ===========================================================
+   Superficies y componentes
+   =========================================================== */
 
 .pr-tarjeta {
   background: var(--pr-superficie);
@@ -61,47 +396,154 @@ body {
   box-shadow: var(--pr-sombra);
 }
 
+a.pr-tarjeta,
+.pr-tarjeta-enlace {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--pr-transicion), box-shadow var(--pr-transicion),
+              border-color var(--pr-transicion);
+}
+
+a.pr-tarjeta:hover,
+.pr-tarjeta-enlace:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pr-sombra-lg);
+  border-color: var(--pr-borde-fuerte);
+}
+
+.pr-superficie-suave {
+  background: var(--pr-superficie-2);
+  border: 1px solid var(--pr-borde);
+  border-radius: var(--pr-radio-sm);
+}
+
+/* Tarjeta destacada del dashboard */
+.pr-tarjeta-destacada {
+  background: linear-gradient(135deg, var(--pr-acento) 0%, #7C4DEB 55%, #9333EA 100%);
+  border: 0;
+  color: #fff;
+  box-shadow: 0 10px 32px rgba(91, 91, 214, .32);
+}
+
+.pr-tarjeta-destacada .pr-etiqueta,
+.pr-tarjeta-destacada .text-secondary { color: rgba(255, 255, 255, .78) !important; }
+.pr-tarjeta-destacada .pr-cifra { color: #fff; }
+
+
 /* --- Distintivos de estado --- */
 
 .pr-estado {
   display: inline-flex;
   align-items: center;
   gap: .35rem;
-  padding: .2rem .6rem;
+  padding: .22rem .62rem;
   border-radius: 999px;
   font-size: .8125rem;
   font-weight: 600;
   line-height: 1.4;
+  white-space: nowrap;
 }
 
-.pr-estado-pagada        { color: var(--pr-pagado);    background: var(--pr-pagado-bg); }
-.pr-estado-proxima_vencer{ color: var(--pr-proximo);   background: var(--pr-proximo-bg); }
-.pr-estado-vencida       { color: var(--pr-vencido);   background: var(--pr-vencido-bg); }
-.pr-estado-pendiente     { color: var(--pr-pendiente); background: var(--pr-pendiente-bg); }
+.pr-estado-pagada         { color: var(--pr-pagado);    background: var(--pr-pagado-bg); }
+.pr-estado-proxima_vencer { color: var(--pr-proximo);   background: var(--pr-proximo-bg); }
+.pr-estado-vencida        { color: var(--pr-vencido);   background: var(--pr-vencido-bg); }
+.pr-estado-pendiente      { color: var(--pr-pendiente); background: var(--pr-pendiente-bg); }
+
 
 /* --- Bandas de prioridad (§12) --- */
 
-.pr-prioridad-alta  { border-left: 4px solid var(--pr-vencido); }
-.pr-prioridad-media { border-left: 4px solid var(--pr-proximo); }
-.pr-prioridad-baja  { border-left: 4px solid var(--pr-pagado); }
+.pr-prioridad-alta  { border-left: 3px solid var(--pr-vencido); }
+.pr-prioridad-media { border-left: 3px solid var(--pr-proximo); }
+.pr-prioridad-baja  { border-left: 3px solid var(--pr-pagado); }
 
-/* --- Cifras --- */
+
+/* --- Cifras y etiquetas --- */
 
 .pr-cifra {
-  font-size: 1.75rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -.5px;
   font-variant-numeric: tabular-nums;
 }
 
 .pr-etiqueta {
-  font-size: .8125rem;
+  font-size: .75rem;
+  font-weight: 600;
   color: var(--pr-texto-suave);
   text-transform: uppercase;
-  letter-spacing: .4px;
+  letter-spacing: .6px;
 }
 
-/* --- Calendario (§24) --- */
+.pr-numero { font-variant-numeric: tabular-nums; }
+
+
+/* --- Formularios y botones sobre el nuevo fondo --- */
+
+.btn-primary {
+  --bs-btn-bg: var(--pr-acento);
+  --bs-btn-border-color: var(--pr-acento);
+  --bs-btn-hover-bg: var(--pr-acento-fuerte);
+  --bs-btn-hover-border-color: var(--pr-acento-fuerte);
+  --bs-btn-active-bg: var(--pr-acento-fuerte);
+  --bs-btn-disabled-bg: var(--pr-acento);
+  font-weight: 500;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--pr-acento);
+  --bs-btn-border-color: var(--pr-acento);
+  --bs-btn-hover-bg: var(--pr-acento);
+  --bs-btn-hover-border-color: var(--pr-acento);
+}
+
+.form-control, .form-select {
+  background-color: var(--pr-superficie);
+  border-color: var(--pr-borde-fuerte);
+  color: var(--pr-texto);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--pr-acento);
+  box-shadow: 0 0 0 3px var(--pr-acento-suave);
+  background-color: var(--pr-superficie);
+  color: var(--pr-texto);
+}
+
+.form-control::placeholder { color: var(--pr-texto-suave); opacity: .7; }
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--pr-texto);
+  --bs-table-border-color: var(--pr-borde);
+  --bs-table-hover-bg: var(--pr-superficie-2);
+  --bs-table-hover-color: var(--pr-texto);
+}
+
+.dropdown-menu {
+  --bs-dropdown-bg: var(--pr-superficie);
+  --bs-dropdown-border-color: var(--pr-borde);
+  --bs-dropdown-link-hover-bg: var(--pr-superficie-2);
+  --bs-dropdown-link-color: var(--pr-texto);
+  box-shadow: var(--pr-sombra-lg);
+}
+
+.text-secondary { color: var(--pr-texto-suave) !important; }
+.border-bottom, .border-top, .border { border-color: var(--pr-borde) !important; }
+
+.progress { background-color: var(--pr-superficie-2); }
+
+.alert-light {
+  background: var(--pr-superficie-2);
+  border-color: var(--pr-borde);
+  color: var(--pr-texto);
+}
+
+
+/* ===========================================================
+   Calendario (§24)
+   =========================================================== */
 
 .pr-calendario {
   display: grid;
@@ -111,12 +553,12 @@ body {
 
 .pr-calendario-cabecera {
   text-align: center;
-  font-size: .75rem;
+  font-size: .7rem;
   font-weight: 700;
   color: var(--pr-texto-suave);
   text-transform: uppercase;
-  letter-spacing: .5px;
-  padding-bottom: .25rem;
+  letter-spacing: .6px;
+  padding-bottom: .3rem;
 }
 
 .pr-dia {
@@ -124,36 +566,37 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-height: 84px;
-  padding: .4rem;
+  min-height: 88px;
+  padding: .45rem;
   border: 1px solid var(--pr-borde);
-  border-radius: 10px;
+  border-radius: var(--pr-radio-sm);
   background: var(--pr-superficie);
   text-decoration: none;
   color: inherit;
-  transition: border-color .12s ease, box-shadow .12s ease;
+  transition: all var(--pr-transicion);
 }
 
 .pr-dia:hover,
 .pr-dia:focus-visible {
-  border-color: var(--pr-azul-500);
+  border-color: var(--pr-acento);
   box-shadow: var(--pr-sombra);
+  transform: translateY(-1px);
 }
 
 .pr-dia-fuera {
   background: transparent;
   border-color: transparent;
-  opacity: .45;
+  opacity: .4;
 }
 
 .pr-dia-hoy {
-  border-color: var(--pr-azul-500);
-  box-shadow: inset 0 0 0 1px var(--pr-azul-500);
+  border-color: var(--pr-acento);
+  box-shadow: inset 0 0 0 1px var(--pr-acento);
 }
 
 .pr-dia-seleccionado {
-  background: var(--pr-azul-100);
-  border-color: var(--pr-azul-700);
+  background: var(--pr-acento-suave);
+  border-color: var(--pr-acento);
 }
 
 .pr-dia-numero {
@@ -162,7 +605,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.pr-dia-hoy .pr-dia-numero { color: var(--pr-azul-700); }
+.pr-dia-hoy .pr-dia-numero { color: var(--pr-acento); }
 
 .pr-dia-monto {
   font-size: .6875rem;
@@ -173,7 +616,7 @@ body {
 }
 
 .pr-dia-vencido .pr-dia-monto { color: var(--pr-vencido); }
-.pr-dia-pagado .pr-dia-monto  { color: var(--pr-pagado); }
+.pr-dia-pagado  .pr-dia-monto { color: var(--pr-pagado); }
 
 .pr-dia-puntos {
   display: flex;
@@ -188,24 +631,65 @@ body {
   border-radius: 50%;
 }
 
-@media (max-width: 576px) {
-  .pr-calendario { gap: 3px; }
-  .pr-dia { min-height: 58px; padding: .25rem; }
-  .pr-dia-monto { display: none; }
-}
 
-/* --- Accesibilidad: foco siempre visible (§21) --- */
+/* ===========================================================
+   Accesibilidad (§21)
+   =========================================================== */
 
 a:focus-visible,
 button:focus-visible,
 .form-control:focus-visible,
-.btn:focus-visible {
-  outline: 3px solid var(--pr-azul-500);
+.btn:focus-visible,
+.pr-nav-enlace:focus-visible {
+  outline: 3px solid var(--pr-acento);
   outline-offset: 2px;
 }
 
-/* --- Responsive (§21) --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
 
-@media (max-width: 576px) {
-  .pr-cifra { font-size: 1.4rem; }
+
+/* ===========================================================
+   Responsive
+   =========================================================== */
+
+@media (max-width: 991.98px) {
+  .pr-sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--pr-transicion);
+    box-shadow: var(--pr-sombra-lg);
+  }
+
+  .pr-sidebar.abierto { transform: translateX(0); }
+
+  .pr-principal { margin-left: 0; }
+
+  .pr-boton-menu { display: inline-flex; }
+
+  .pr-velo {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(10, 14, 28, .55);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--pr-transicion), visibility var(--pr-transicion);
+  }
+
+  .pr-velo.visible { opacity: 1; visibility: visible; }
+
+  .pr-topbar, .pr-contenido { padding-left: 1rem; padding-right: 1rem; }
+}
+
+@media (max-width: 575.98px) {
+  .pr-cifra { font-size: 1.45rem; }
+  .pr-calendario { gap: 3px; }
+  .pr-dia { min-height: 58px; padding: .25rem; }
+  .pr-dia-monto { display: none; }
+  .pr-contenido { padding-top: 1.15rem; }
 }

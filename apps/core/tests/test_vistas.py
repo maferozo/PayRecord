@@ -16,4 +16,14 @@ class InicioTests(SimpleTestCase):
 
     def test_inicio_aplica_el_filtro_de_moneda(self):
         respuesta = self.client.get(reverse("core:inicio"))
-        self.assertContains(respuesta, "$1.250.000")
+        self.assertContains(respuesta, "$450.000")
+
+    def test_inicio_permite_cambiar_el_tema(self):
+        respuesta = self.client.get(reverse("core:inicio"))
+        self.assertContains(respuesta, 'data-accion="cambiar-tema"')
+
+    def test_inicio_fija_el_tema_antes_de_pintar(self):
+        """Sin esto, la página parpadearía en claro antes de pasar a oscuro."""
+        respuesta = self.client.get(reverse("core:inicio"))
+        self.assertContains(respuesta, "payrecord-tema")
+        self.assertContains(respuesta, "prefers-color-scheme")

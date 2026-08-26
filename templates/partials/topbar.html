@@ -1,0 +1,56 @@
+{% comment %}
+Barra superior. Con sesión iniciada solo lleva acciones rápidas: la
+navegación vive en el menú lateral. Sin sesión hace de cabecera pública.
+{% endcomment %}
+
+<header class="pr-topbar">
+
+  {% if user.is_authenticated %}
+
+    <button type="button" class="pr-icono-boton pr-boton-menu" id="botonMenu"
+            aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+
+    <div class="d-flex align-items-center gap-2 ms-auto">
+      <a href="{% url 'obligaciones:crear' %}" class="btn btn-primary btn-sm d-none d-md-inline-flex">
+        <i class="bi bi-plus-lg me-1"></i>Registrar obligación
+      </a>
+
+      <a href="{% url 'recordatorios:bandeja' %}" class="pr-icono-boton"
+         aria-label="Notificaciones{% if notificaciones_no_leidas %}: {{ notificaciones_no_leidas }} sin leer{% endif %}">
+        <i class="bi bi-bell"></i>
+        {% if notificaciones_no_leidas %}
+          <span class="pr-punto-aviso">{{ notificaciones_no_leidas }}</span>
+        {% endif %}
+      </a>
+
+      <button type="button" class="pr-icono-boton" data-accion="cambiar-tema"
+              aria-label="Cambiar tema">
+        <i class="bi bi-moon-stars"></i>
+      </button>
+    </div>
+
+  {% else %}
+
+    <a class="d-flex align-items-center gap-2 text-decoration-none" href="{% url 'core:inicio' %}">
+      <span class="pr-marca-icono"><i class="bi bi-shield-check"></i></span>
+      <span class="fw-bold" style="letter-spacing:.4px;">
+        <span style="color: var(--pr-texto);">PAY</span><span style="color: var(--pr-acento);">RECORD</span>
+      </span>
+    </a>
+
+    <div class="d-flex align-items-center gap-2 ms-auto">
+      <button type="button" class="pr-icono-boton" data-accion="cambiar-tema"
+              aria-label="Cambiar tema">
+        <i class="bi bi-moon-stars"></i>
+      </button>
+      <a href="{% url 'usuarios:login' %}" class="btn btn-sm btn-outline-primary">Iniciar sesión</a>
+      <a href="{% url 'usuarios:registro' %}" class="btn btn-sm btn-primary d-none d-sm-inline-block">
+        Crear cuenta
+      </a>
+    </div>
+
+  {% endif %}
+
+</header>

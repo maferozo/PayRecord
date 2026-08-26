@@ -1,0 +1,137 @@
+{% comment %}
+Navegación principal (§23), agrupada por tipo de tarea en lugar de una
+lista plana: el usuario busca «lo que tengo que hacer» o «cómo me está
+yendo», no un menú alfabético.
+
+`request.resolver_match.view_name` marca la sección actual.
+{% endcomment %}
+
+{% with actual=request.resolver_match.view_name %}
+<aside class="pr-sidebar" id="sidebar">
+
+  <a class="pr-marca" href="{% url 'dashboard:inicio' %}">
+    <span class="pr-marca-icono"><i class="bi bi-shield-check"></i></span>
+    <span><span class="pr-marca-pay">PAY</span><span class="pr-marca-record">RECORD</span></span>
+  </a>
+
+  <nav class="pr-nav" aria-label="Navegación principal">
+
+    <a class="pr-nav-enlace {% if actual == 'dashboard:inicio' %}activo{% endif %}"
+       href="{% url 'dashboard:inicio' %}"
+       {% if actual == 'dashboard:inicio' %}aria-current="page"{% endif %}>
+      <i class="bi bi-grid-1x2"></i>Dashboard
+    </a>
+
+    <p class="pr-nav-titulo">Gestión</p>
+
+    <a class="pr-nav-enlace {% if actual == 'obligaciones:lista' %}activo{% endif %}"
+       href="{% url 'obligaciones:lista' %}"
+       {% if actual == 'obligaciones:lista' %}aria-current="page"{% endif %}>
+      <i class="bi bi-list-check"></i>Mis obligaciones
+    </a>
+
+    <a class="pr-nav-enlace {% if actual == 'obligaciones:crear' %}activo{% endif %}"
+       href="{% url 'obligaciones:crear' %}"
+       {% if actual == 'obligaciones:crear' %}aria-current="page"{% endif %}>
+      <i class="bi bi-plus-circle"></i>Registrar
+    </a>
+
+    <a class="pr-nav-enlace {% if actual == 'dashboard:calendario' %}activo{% endif %}"
+       href="{% url 'dashboard:calendario' %}"
+       {% if actual == 'dashboard:calendario' %}aria-current="page"{% endif %}>
+      <i class="bi bi-calendar3"></i>Calendario
+    </a>
+
+    <a class="pr-nav-enlace {% if actual == 'recordatorios:bandeja' or actual == 'recordatorios:programados' %}activo{% endif %}"
+       href="{% url 'recordatorios:bandeja' %}">
+      <i class="bi bi-bell"></i>Notificaciones
+      {% if notificaciones_no_leidas %}
+        <span class="pr-nav-contador">{{ notificaciones_no_leidas }}</span>
+      {% endif %}
+    </a>
+
+    {% if user.es_empresa %}
+      <p class="pr-nav-titulo">Empresa</p>
+
+      <a class="pr-nav-enlace {% if actual == 'obligaciones:proveedor_lista' or actual == 'obligaciones:proveedor_detalle' %}activo{% endif %}"
+         href="{% url 'obligaciones:proveedor_lista' %}">
+        <i class="bi bi-truck"></i>Proveedores
+      </a>
+    {% endif %}
+
+    <p class="pr-nav-titulo">Análisis</p>
+
+    <a class="pr-nav-enlace {% if actual == 'analitica:estadisticas' %}activo{% endif %}"
+       href="{% url 'analitica:estadisticas' %}"
+       {% if actual == 'analitica:estadisticas' %}aria-current="page"{% endif %}>
+      <i class="bi bi-bar-chart"></i>Estadísticas
+    </a>
+
+    <a class="pr-nav-enlace {% if actual == 'analitica:insights' %}activo{% endif %}"
+       href="{% url 'analitica:insights' %}"
+       {% if actual == 'analitica:insights' %}aria-current="page"{% endif %}>
+      <i class="bi bi-lightbulb"></i>Insights
+    </a>
+
+    <p class="pr-nav-titulo">Configuración</p>
+
+    <a class="pr-nav-enlace {% if 'categoria' in actual %}activo{% endif %}"
+       href="{% url 'obligaciones:categoria_lista' %}">
+      <i class="bi bi-tags"></i>Categorías
+    </a>
+
+    <a class="pr-nav-enlace {% if actual == 'usuarios:perfil' %}activo{% endif %}"
+       href="{% url 'usuarios:perfil' %}"
+       {% if actual == 'usuarios:perfil' %}aria-current="page"{% endif %}>
+      <i class="bi bi-gear"></i>Mi cuenta
+    </a>
+
+    {% if user.is_staff %}
+      <a class="pr-nav-enlace" href="{% url 'admin:index' %}">
+        <i class="bi bi-sliders"></i>Administración
+      </a>
+    {% endif %}
+  </nav>
+
+  <div class="pr-sidebar-pie dropdown">
+    <button class="pr-usuario dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+      <span class="pr-avatar">{{ user.get_short_name|slice:":1"|upper }}</span>
+      <span class="flex-grow-1 min-w-0">
+        <span class="pr-usuario-nombre d-block text-truncate">{{ user.get_short_name }}</span>
+        <span class="pr-usuario-tipo d-block text-truncate">
+          {% if user.empresa %}{{ user.empresa.nombre }}{% else %}Cuenta personal{% endif %}
+        </span>
+      </span>
+    </button>
+
+    <ul class="dropdown-menu w-100">
+      <li>
+        <span class="dropdown-item-text small text-secondary text-truncate">{{ user.email }}</span>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <a class="dropdown-item" href="{% url 'usuarios:perfil' %}">
+          <i class="bi bi-gear me-2"></i>Configuración
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{% url 'usuarios:password_change' %}">
+          <i class="bi bi-key me-2"></i>Cambiar contraseña
+        </a>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        {# Django exige POST para cerrar sesión #}
+        <form method="post" action="{% url 'usuarios:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="dropdown-item text-danger">
+            <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+          </button>
+        </form>
+      </li>
+    </ul>
+  </div>
+
+</aside>
+{% endwith %}

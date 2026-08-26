@@ -37,7 +37,10 @@ def estadisticas(request):
     grafico_estado = {
         "etiquetas": [fila["etiqueta"] for fila in datos_estado],
         "cantidades": [fila["cantidad"] for fila in datos_estado],
+        # Color de respaldo por si el CSS no estuviera disponible; el
+        # navegador prefiere el token del tema activo (ver estadisticas.js).
         "colores": [COLORES_ESTADO[fila["estado"]] for fila in datos_estado],
+        "claves": [fila["estado"] for fila in datos_estado],
     }
 
     grafico_categoria = {
