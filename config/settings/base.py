@@ -13,6 +13,17 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
+# Azure App Service publica el dominio de la aplicación en esta variable.
+# Se añade sola para no tener que recordar editar ALLOWED_HOSTS al desplegar.
+_dominio_azure = env("WEBSITE_HOSTNAME", default="")
+CSRF_TRUSTED_ORIGINS = []
+
+if _dominio_azure:
+    ALLOWED_HOSTS.append(_dominio_azure)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_dominio_azure}")
+
+CSRF_TRUSTED_ORIGINS += env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
 
 # --- Aplicaciones ---
 
@@ -45,6 +56,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise sirve los archivos estáticos sin necesitar un servidor web
+    # aparte. Va justo después de SecurityMiddleware, como pide su manual.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -78,6 +92,28 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Se elige el motor por variable de entorno para poder desarrollar antes de
 # tener credenciales de MySQL sin tocar una línea de código (ver docs/00-analisis-fase0.md).
 
+
+def _opciones_mysql():
+    """Opciones de conexión a MySQL.
+
+    Azure Database for MySQL exige TLS. En local no hace falta, así que se
+    activa solo cuando se indica `DB_SSL=True`.
+    """
+    opciones = {
+        "charset": "utf8mb4",
+        "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+    }
+
+    if env.bool("DB_SSL", default=False):
+        certificado = env("DB_SSL_CA", default="")
+        # Con certificado se verifica la identidad del servidor; sin él, la
+        # conexión sigue cifrada pero no se comprueba contra quién.
+        opciones["ssl"] = {"ca": certificado} if certificado else {}
+        if not certificado:
+            opciones["ssl_mode"] = "REQUIRED"
+
+    return opciones
+
 if env("DB_ENGINE", default="mysql") == "sqlite":
     DATABASES = {
         "default": {
@@ -94,10 +130,7 @@ else:
             "PASSWORD": env("DB_PASSWORD"),
             "HOST": env("DB_HOST", default="127.0.0.1"),
             "PORT": env("DB_PORT", default="3306"),
-            "OPTIONS": {
-                "charset": "utf8mb4",
-                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
+            "OPTIONS": _opciones_mysql(),
         }
     }
 
@@ -139,6 +172,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# En producción se activa el almacenamiento comprimido de WhiteNoise
+# (ver production.py). Aquí no, porque exige haber ejecutado collectstatic
+# y rompería el servidor de desarrollo.
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"

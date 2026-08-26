@@ -1,0 +1,4 @@
+[config]
+# Azure App Service construye el proyecto (instala requirements.txt)
+# antes de ejecutar el comando de inicio.
+SCM_DO_BUILD_DURING_DEPLOYMENT = true

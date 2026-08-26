@@ -17,6 +17,22 @@ DEBUG = False
 HTTPS_ACTIVO = env.bool("HTTPS_ACTIVO", default=False)  # noqa: F405
 
 
+# --- Archivos estáticos servidos por WhiteNoise ---
+# Comprime y añade un hash al nombre, para que el navegador pueda cachearlos
+# indefinidamente sin arriesgarse a servir una versión vieja tras desplegar.
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Detrás del balanceador de Azure, la petición llega por HTTP con esta
+# cabecera indicando que el usuario venía por HTTPS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+
 # --- Cabeceras y protecciones que no dependen de HTTPS (§28) ---
 
 SECURE_CONTENT_TYPE_NOSNIFF = True

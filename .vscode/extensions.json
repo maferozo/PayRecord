@@ -1,0 +1,13 @@
+{
+  // VS Code ofrece instalar estas al abrir la carpeta del proyecto.
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "batisteo.vscode-django",
+    "charliermarsh.ruff",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-mysql",
+    "usernamehw.errorlens",
+    "eamodio.gitlens"
+  ]
+}

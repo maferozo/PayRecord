@@ -1,0 +1,42 @@
+{
+  // Intérprete del entorno virtual del proyecto
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+
+  // Sin esto las plantillas de Django se ven como HTML plano y las
+  // etiquetas {% %} aparecen como errores
+  "files.associations": {
+    "**/templates/**/*.html": "django-html",
+    "**/*.html": "django-html"
+  },
+  "emmet.includeLanguages": {
+    "django-html": "html"
+  },
+
+  // Los archivos .env deben guardarse sin BOM: Django ignora la primera
+  // línea en silencio si lo lleva
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": false,
+    "editor.rulers": [95]
+  },
+
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": false,
+
+  "search.exclude": {
+    "**/.venv": true,
+    "**/staticfiles": true,
+    "**/htmlcov": true,
+    "**/__pycache__": true
+  },
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
+}

@@ -4,6 +4,9 @@
 !.env.example
 # Versiones de los scripts SQL con contraseñas ya sustituidas
 *.local.sql
+# Respaldos de la base de datos: contienen datos y hashes de contraseñas
+*_respaldo.sql
+*.dump.sql
 
 # --- Entorno virtual ---
 .venv/
@@ -34,7 +37,10 @@ htmlcov/
 .pytest_cache/
 
 # --- Editores ---
-.vscode/
+.vscode/*
+# Estos dos sí se comparten: configuran el proyecto igual para todo el equipo
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 *.swp
 

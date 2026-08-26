@@ -41,6 +41,8 @@ definido en el análisis.
 | [Casos de uso](docs/casos-de-uso.md) | Los 18 casos, cada uno con la prueba que lo verifica |
 | [Manual de usuario](docs/manual-usuario.md) | Guía funcional para quien usa la aplicación |
 | [Informe de pruebas](docs/pruebas.md) | Cobertura, casos exigidos por la especificación y limitaciones |
+| [Instalar en otro equipo](docs/instalacion-en-otro-equipo.md) | Montar el proyecto desde cero: programas, extensiones de VS Code y copia de la base de datos |
+| [Publicar en Azure](docs/despliegue-azure.md) | Despliegue paso a paso en App Service + MySQL, con lo que es gratis y lo que no |
 
 ---
 
