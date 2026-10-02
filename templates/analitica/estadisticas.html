@@ -168,18 +168,20 @@
                   role="img"></canvas>
         </div>
 
-        <table class="table table-sm mt-3 mb-0">
-          <caption class="visually-hidden">Cantidad y valor por estado</caption>
-          <tbody>
-            {% for fila in por_estado %}
-              <tr>
-                <td class="small">{{ fila.etiqueta }}</td>
-                <td class="small text-end">{{ fila.cantidad }}</td>
-                <td class="small text-end fw-semibold">{{ fila.total|moneda_cop }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-sm mt-3 mb-0">
+            <caption class="visually-hidden">Cantidad y valor por estado</caption>
+            <tbody>
+              {% for fila in por_estado %}
+                <tr>
+                  <td class="small">{{ fila.etiqueta }}</td>
+                  <td class="small text-end">{{ fila.cantidad }}</td>
+                  <td class="small text-end fw-semibold">{{ fila.total|moneda_cop }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

@@ -101,6 +101,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Ningún medio incrustado debe poder forzar un ancho mayor al disponible
+   (una imagen subida con su tamaño original, un iframe, etc.). */
+img, svg, canvas, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
 a { color: var(--pr-acento); }
 a:hover { color: var(--pr-acento-fuerte); }
 
