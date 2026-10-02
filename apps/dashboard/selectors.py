@@ -6,11 +6,12 @@ Esta app no tiene modelos: solo lee lo que exponen `obligaciones` y
 
 from decimal import Decimal
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from apps.obligaciones.enums import EstadoObligacion
 from apps.obligaciones.models import Obligacion
+from apps.obligaciones.services.estados import fin_de_mes
 from apps.obligaciones.services.priorizacion import construir_contexto, priorizar
 
 
@@ -18,12 +19,28 @@ def _consulta_base(usuario, hoy):
     return Obligacion.objects.para_usuario(usuario, hoy=hoy).select_related("categoria")
 
 
+def _sin_periodos_futuros(consulta, hoy):
+    """Descarta los meses que el generador de recurrencia ya creó por
+    adelantado, pero que todavía no llegan.
+
+    Una obligación que el usuario registró él mismo, por lejana que sea su
+    fecha, sigue contando (siempre contó, y así lo esperan las pruebas y el
+    propio usuario). Lo que no debe sumarse es un mes futuro que existe solo
+    porque el calendario necesita mostrarlo por adelantado (§obligaciones
+    mensuales) — ese sí se vuelve real la primera vez que la propia fecha
+    de ese periodo llegue.
+    """
+    return consulta.exclude(
+        Q(obligacion_recurrente__isnull=False) & Q(fecha_vencimiento__gt=fin_de_mes(hoy))
+    )
+
+
 def resumen(usuario, hoy=None):
     """Conteos y sumas por estado, en una sola consulta agregada (§11)."""
     hoy = hoy or timezone.localdate()
 
     filas = (
-        _consulta_base(usuario, hoy)
+        _sin_periodos_futuros(_consulta_base(usuario, hoy), hoy)
         .values("estado")
         .annotate(cantidad=Count("id"), total=Sum("monto"))
     )
@@ -81,13 +98,14 @@ def gasto_por_categoria(usuario, hoy=None, limite=6):
     """Reparto del dinero comprometido por categoría.
 
     Alimenta el bloque de proveedores y categorías del dashboard empresarial
-    y sirve de base para las estadísticas de la Fase 8.
+    y sirve de base para las estadísticas de la Fase 8. Mismo criterio que
+    `resumen`: los meses futuros que el generador de recurrencia ya creó por
+    adelantado no cuentan todavía.
     """
     hoy = hoy or timezone.localdate()
 
     return list(
-        _consulta_base(usuario, hoy)
-        .pendientes_de_pago()
+        _sin_periodos_futuros(_consulta_base(usuario, hoy).pendientes_de_pago(), hoy)
         .values("categoria__nombre", "categoria__color", "categoria__icono")
         .annotate(total=Sum("monto"), cantidad=Count("id"))
         .order_by("-total")[:limite]

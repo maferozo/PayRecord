@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from apps.core.models import ModeloBase
 
-from .enums import AmbitoCategoria, EstadoObligacion, Prioridad
+from .enums import AmbitoCategoria, EstadoObligacion, FrecuenciaObligacion, Prioridad
 from .managers import CategoriaQuerySet, ObligacionQuerySet
 from .services.estados import UMBRAL_POR_DEFECTO, calcular_estado, dias_para_vencer
 
@@ -112,6 +112,33 @@ class Obligacion(ModeloBase):
         validators=[MinValueValidator(Decimal("0.01"))],
     )
     fecha_vencimiento = models.DateField("Fecha de vencimiento")
+
+    # --- Recurrencia mensual ---
+    frecuencia = models.CharField(
+        "Frecuencia de pago",
+        max_length=7,
+        choices=FrecuenciaObligacion.choices,
+        default=FrecuenciaObligacion.UNICA,
+    )
+    fecha_fin = models.DateField(
+        "Repetir hasta",
+        null=True,
+        blank=True,
+        help_text="Solo aplica a obligaciones mensuales. Vacío significa "
+                  "que se sigue repitiendo sin fecha de fin.",
+    )
+    obligacion_recurrente = models.ForeignKey(
+        "self",
+        verbose_name="Obligación recurrente de origen",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="periodos",
+        help_text="Vacío si es un pago único o si esta es la primera "
+                  "obligación de una serie mensual. Las siguientes obligaciones "
+                  "de la serie apuntan aquí a la primera.",
+    )
+
     categoria = models.ForeignKey(
         Categoria,
         verbose_name="Categoría",
@@ -148,6 +175,15 @@ class Obligacion(ModeloBase):
             models.Index(fields=["empresa", "fecha_vencimiento"]),
             models.Index(fields=["pagada", "fecha_vencimiento"]),
         ]
+        constraints = [
+            # Impide que el generador de periodos cree el mismo mes dos
+            # veces, aunque se ejecute varias veces seguidas (mismo patrón
+            # que la idempotencia de Recordatorio).
+            UniqueConstraint(
+                fields=["obligacion_recurrente", "fecha_vencimiento"],
+                name="uq_periodo_recurrente",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.concepto} ({self.monto})"
@@ -183,6 +219,27 @@ class Obligacion(ModeloBase):
     @property
     def esta_vencida(self):
         return self.estado_actual == EstadoObligacion.VENCIDA
+
+    # --- Recurrencia mensual ---
+
+    @property
+    def es_mensual(self):
+        return self.frecuencia == FrecuenciaObligacion.MENSUAL
+
+    @property
+    def raiz_recurrente(self):
+        """La primera obligación de la serie (ella misma si ya lo es)."""
+        return self.obligacion_recurrente or self
+
+    @property
+    def dia_pago_objetivo(self):
+        """Día del mes que se repite cada periodo.
+
+        Siempre se toma de la raíz, nunca de un periodo ya generado: un
+        periodo de febrero pudo quedar en el día 28 por no existir el 31,
+        y eso no debe "correr" el día de los meses siguientes.
+        """
+        return self.raiz_recurrente.fecha_vencimiento.day
 
     # --- Operaciones ---
 

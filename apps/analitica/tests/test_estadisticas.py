@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -173,6 +174,212 @@ class EvolucionMensualTests(BaseAnalitica):
         self.assertEqual(serie[-1]["etiqueta"], "feb 27")
 
 
+class ComprometidoEsteMesTests(BaseAnalitica):
+    """Estadística 1: la tarjeta principal, con variación respecto al mes anterior."""
+
+    def test_suma_lo_que_vence_este_mes(self):
+        self.crear(100000, 0)   # este mes
+        self.crear(200000, 3)   # este mes
+        self.crear(300000, 40)  # el mes siguiente, no cuenta aquí
+
+        datos = selectors.comprometido_este_mes(self.usuario, hoy=HOY)
+        self.assertEqual(datos["actual"], Decimal("300000"))
+
+    def test_sin_datos_del_mes_anterior_no_inventa_porcentaje(self):
+        self.crear(100000, 0)
+        datos = selectors.comprometido_este_mes(self.usuario, hoy=HOY)
+        self.assertIsNone(datos["porcentaje"])
+
+    def test_calcula_el_aumento_real(self):
+        self.crear(100000, -35)  # mes anterior: 100.000
+        self.crear(200000, 0)    # este mes: 200.000
+
+        datos = selectors.comprometido_este_mes(self.usuario, hoy=HOY)
+        self.assertEqual(datos["anterior"], Decimal("100000"))
+        self.assertEqual(datos["actual"], Decimal("200000"))
+        self.assertEqual(datos["porcentaje"], 100.0)
+        self.assertTrue(datos["aumento"])
+
+    def test_calcula_la_disminucion_real(self):
+        self.crear(200000, -35)  # mes anterior: 200.000
+        self.crear(100000, 0)    # este mes: 100.000
+
+        datos = selectors.comprometido_este_mes(self.usuario, hoy=HOY)
+        self.assertEqual(datos["porcentaje"], -50.0)
+        self.assertFalse(datos["aumento"])
+
+    def test_incluye_pagadas_y_sin_pagar_por_igual(self):
+        """"Comprometido" aquí es lo que vence, no solo lo pendiente."""
+        self.crear(100000, 0, pagada=True, fecha_pago=HOY)
+        self.crear(50000, 1)
+
+        datos = selectors.comprometido_este_mes(self.usuario, hoy=HOY)
+        self.assertEqual(datos["actual"], Decimal("150000"))
+
+
+class GastoPorQuincenaTests(BaseAnalitica):
+    """Estadística 3: primera quincena (1-15) frente a segunda (16-fin de mes)."""
+
+    def crear_en_dia(self, monto, dia, pagada=False):
+        return Obligacion.objects.create(
+            usuario=self.usuario,
+            concepto=f"Día {dia}",
+            monto=Decimal(monto),
+            fecha_vencimiento=HOY.replace(day=dia),
+            categoria=self.servicios,
+            pagada=pagada,
+            fecha_pago=HOY if pagada else None,
+        )
+
+    def test_reparte_correctamente_segun_el_dia(self):
+        self.crear_en_dia(100000, 5)   # primera
+        self.crear_en_dia(200000, 15)  # primera (el corte incluye el 15)
+        self.crear_en_dia(300000, 16)  # segunda
+        self.crear_en_dia(400000, 28)  # segunda
+
+        datos = selectors.gasto_por_quincena(self.usuario, hoy=HOY)
+
+        self.assertEqual(datos["primera"]["total"], Decimal("300000"))
+        self.assertEqual(datos["primera"]["cantidad"], 2)
+        self.assertEqual(datos["segunda"]["total"], Decimal("700000"))
+        self.assertEqual(datos["segunda"]["cantidad"], 2)
+
+    def test_calcula_los_porcentajes(self):
+        self.crear_en_dia(300000, 5)
+        self.crear_en_dia(700000, 20)
+
+        datos = selectors.gasto_por_quincena(self.usuario, hoy=HOY)
+        self.assertEqual(datos["primera"]["porcentaje"], 30)
+        self.assertEqual(datos["segunda"]["porcentaje"], 70)
+
+    def test_incluye_pagadas_y_sin_pagar(self):
+        self.crear_en_dia(100000, 5, pagada=True)
+        self.crear_en_dia(50000, 10)
+
+        datos = selectors.gasto_por_quincena(self.usuario, hoy=HOY)
+        self.assertEqual(datos["primera"]["total"], Decimal("150000"))
+
+    def test_no_mezcla_obligaciones_de_otros_meses(self):
+        self.crear_en_dia(500000, 5)  # este mes
+        self.crear(999999, 40)        # el mes siguiente, fuera de rango
+
+        datos = selectors.gasto_por_quincena(self.usuario, hoy=HOY)
+        self.assertEqual(datos["primera"]["total"], Decimal("500000"))
+        self.assertEqual(datos["segunda"]["total"], Decimal("0"))
+
+    def test_sin_datos_no_hay_porcentaje(self):
+        datos = selectors.gasto_por_quincena(self.usuario, hoy=HOY)
+        self.assertFalse(datos["hay_datos"])
+        self.assertIsNone(datos["primera"]["porcentaje"])
+
+
+class MayoresGastosTests(BaseAnalitica):
+    """Estadística 4: ranking de este mes, de mayor a menor."""
+
+    def test_ordena_de_mayor_a_menor(self):
+        self.crear(100000, 3)
+        self.crear(900000, 5)
+        self.crear(500000, 7)
+
+        datos = selectors.mayores_gastos(self.usuario, hoy=HOY)
+        montos = [o.monto for o in datos["obligaciones"]]
+        self.assertEqual(montos, [Decimal("900000"), Decimal("500000"), Decimal("100000")])
+
+    def test_respeta_el_limite_pero_informa_el_total(self):
+        for i in range(8):
+            self.crear(100000 + i, i)
+
+        datos = selectors.mayores_gastos(self.usuario, limite=5, hoy=HOY)
+        self.assertEqual(len(datos["obligaciones"]), 5)
+        self.assertEqual(datos["total"], 8)
+
+    def test_no_mezcla_el_mes_siguiente(self):
+        self.crear(999999, 40)  # el mes siguiente
+        self.crear(100000, 3)   # este mes
+
+        datos = selectors.mayores_gastos(self.usuario, hoy=HOY)
+        self.assertEqual(datos["total"], 1)
+        self.assertEqual(datos["obligaciones"][0].monto, Decimal("100000"))
+
+    def test_no_mezcla_obligaciones_de_otro_usuario(self):
+        otro = Usuario.objects.create_user(
+            email="otro@example.com", nombre="Otro", password="ClaveSegura123"
+        )
+        self.crear(5000000, 3, usuario=otro)
+        self.crear(100000, 3)
+
+        datos = selectors.mayores_gastos(self.usuario, hoy=HOY)
+        self.assertEqual(datos["total"], 1)
+
+    def test_sin_datos_devuelve_lista_vacia(self):
+        datos = selectors.mayores_gastos(self.usuario, hoy=HOY)
+        self.assertEqual(datos["obligaciones"], [])
+        self.assertEqual(datos["total"], 0)
+
+
+class ComprometidoPorMesTests(BaseAnalitica):
+    """Cuánto vence cada mes hacia adelante, se haya pagado o no."""
+
+    def test_devuelve_el_numero_de_meses_pedido(self):
+        serie = selectors.comprometido_por_mes(self.usuario, meses_adelante=4, hoy=HOY)
+        self.assertEqual(len(serie), 4)
+
+    def test_el_primer_mes_es_el_actual(self):
+        serie = selectors.comprometido_por_mes(self.usuario, meses_adelante=4, hoy=HOY)
+        self.assertEqual(serie[0]["etiqueta"], "ago 26")
+        self.assertTrue(serie[0]["es_mes_actual"])
+        self.assertFalse(serie[1]["es_mes_actual"])
+
+    def test_suma_pagadas_y_sin_pagar_por_igual(self):
+        """A diferencia de `evolucion_mensual`, aquí no importa si ya se pagó:
+        lo que interesa es cuánto vence ese mes."""
+        self.crear(100000, 0, pagada=True, fecha_pago=HOY)
+        self.crear(300000, 1)
+
+        serie = selectors.comprometido_por_mes(self.usuario, meses_adelante=4, hoy=HOY)
+        self.assertEqual(serie[0]["total"], Decimal("400000"))
+
+    def test_un_mes_futuro_solo_suma_lo_de_ese_mes(self):
+        self.crear(100000, 0)     # este mes
+        self.crear(200000, 35)    # el mes siguiente
+
+        serie = selectors.comprometido_por_mes(self.usuario, meses_adelante=4, hoy=HOY)
+        self.assertEqual(serie[0]["total"], Decimal("100000"))
+        self.assertEqual(serie[1]["total"], Decimal("200000"))
+
+    def test_lo_ya_vencido_de_meses_anteriores_no_aparece(self):
+        """Esta serie mira hacia adelante: lo vencido se ve en "por estado",
+        no aquí duplicado."""
+        self.crear(500000, -40)  # venció hace más de un mes
+
+        serie = selectors.comprometido_por_mes(self.usuario, meses_adelante=4, hoy=HOY)
+        self.assertEqual(sum(fila["total"] for fila in serie), Decimal("0"))
+
+
+class ProximosVencimientosTests(BaseAnalitica):
+
+    def test_ordena_por_fecha_mas_cercana(self):
+        self.crear(100000, 10)
+        cercana = self.crear(200000, 2)
+
+        proximos = selectors.proximos_vencimientos(self.usuario, hoy=HOY)
+        self.assertEqual(proximos[0].pk, cercana.pk)
+
+    def test_las_pagadas_no_aparecen(self):
+        self.crear(100000, 3, pagada=True, fecha_pago=HOY)
+        pendiente = self.crear(200000, 5)
+
+        proximos = selectors.proximos_vencimientos(self.usuario, hoy=HOY)
+        self.assertEqual([o.pk for o in proximos], [pendiente.pk])
+
+    def test_respeta_el_limite(self):
+        for dias in range(10):
+            self.crear(100000, dias)
+
+        proximos = selectors.proximos_vencimientos(self.usuario, limite=3, hoy=HOY)
+        self.assertEqual(len(proximos), 3)
+
+
 class CumplimientoTests(BaseAnalitica):
     """Qué proporción de lo pagado se pagó a tiempo (§38)."""
 
@@ -229,31 +436,58 @@ class VistaEstadisticasTests(BaseAnalitica):
         self.assertContains(respuesta, "Todavía no hay datos suficientes")
 
     def test_con_datos_serializa_los_graficos(self):
+        """Los `grafico_*` del contexto son dicts planos, no JSON ya serializado.
+
+        `json_script` en la plantilla hace su propio `json.dumps`; pasarle
+        una cadena ya serializada la codifica dos veces (el navegador recibe
+        texto en vez de un objeto: los gráficos quedaban en blanco).
+        """
         self.crear(100000, 3)
         self.crear(200000, -5, categoria=self.creditos)
 
         respuesta = self.client.get(reverse("analitica:estadisticas"))
         self.assertTrue(respuesta.context["hay_datos"])
 
-        estado = json.loads(respuesta.context["grafico_estado"])
+        estado = respuesta.context["grafico_estado"]
+        self.assertIsInstance(estado, dict)
         self.assertEqual(len(estado["etiquetas"]), 4)
         self.assertEqual(len(estado["colores"]), 4)
 
-        categoria = json.loads(respuesta.context["grafico_categoria"])
+        categoria = respuesta.context["grafico_categoria"]
         self.assertIn("Créditos", categoria["etiquetas"])
 
-        evolucion = json.loads(respuesta.context["grafico_evolucion"])
+        evolucion = respuesta.context["grafico_evolucion"]
         self.assertEqual(len(evolucion["etiquetas"]), 6)
         self.assertEqual(len(evolucion["pagado"]), 6)
 
     def test_los_datos_de_graficos_son_json_valido(self):
-        """json_script exige que el valor sea serializable sin Decimal."""
+        """Comprueba lo que de verdad llega al navegador, no el contexto.
+
+        `<script type="application/json">` debe contener un objeto JSON
+        real. Esta prueba antes leía `respuesta.context[clave]` con
+        `json.loads`, lo que solo confirmaba que el valor era una cadena
+        JSON válida — y por eso no detectó que esa cadena, al pasar de
+        nuevo por `json_script`, terminaba doblemente codificada en el HTML.
+        """
         self.crear(123456.78, 3)
         respuesta = self.client.get(reverse("analitica:estadisticas"))
+        html = respuesta.content.decode()
 
-        for clave in ("grafico_estado", "grafico_categoria", "grafico_evolucion"):
+        ids_html = {
+            "grafico_estado": "datosEstado",
+            "grafico_categoria": "datosCategoria",
+            "grafico_comprometido": "datosComprometido",
+        }
+        for clave, id_html in ids_html.items():
             with self.subTest(clave=clave):
-                json.loads(respuesta.context[clave])
+                bloque = re.search(
+                    rf'<script id="{id_html}"[^>]*>(.*?)</script>', html, re.S
+                )
+                self.assertIsNotNone(bloque, f"no se encontró #{id_html} en el HTML")
+                datos = json.loads(bloque.group(1))
+                self.assertIsInstance(
+                    datos, dict, f"{id_html} llegó doblemente codificado (es {type(datos)})"
+                )
 
     def test_no_incluye_datos_de_otro_usuario(self):
         otro = Usuario.objects.create_user(

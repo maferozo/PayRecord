@@ -1,14 +1,16 @@
 {% extends "base.html" %}
-{% load static formato %}
+{% load static formato obligaciones_extras %}
 
-{% block titulo %}Estadísticas — PAYRECORD{% endblock %}
+{% block titulo %}PayRecord — Estadísticas{% endblock %}
 
 {% block contenido %}
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <div>
     <h1 class="h4 mb-1">Estadísticas</h1>
-    <p class="text-secondary small mb-0">Cómo se comportan tus obligaciones.</p>
+    <p class="text-secondary small mb-0">
+      Analiza cómo están distribuidas tus obligaciones y cuánto dinero tienes comprometido.
+    </p>
   </div>
   <a href="{% url 'obligaciones:lista' %}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-list-check me-1"></i>Ver historial
@@ -27,39 +29,87 @@
 
 {% else %}
 
+  {# ---------- Dinero comprometido este mes (tarjeta principal) ---------- #}
+  <div class="pr-tarjeta pr-tarjeta-destacada p-4 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <p class="pr-etiqueta mb-1">Dinero comprometido este mes</p>
+        <p class="pr-cifra mb-1">{{ comprometido_este_mes.actual|moneda_cop }}</p>
+        {% if comprometido_este_mes.porcentaje is not None %}
+          <p class="small mb-0" style="color: rgba(255,255,255,.9);">
+            {% if comprometido_este_mes.aumento %}
+              <i class="bi bi-arrow-up-short"></i> {{ comprometido_este_mes.porcentaje }}%
+            {% else %}
+              <i class="bi bi-arrow-down-short"></i> {{ comprometido_este_mes.porcentaje|floatformat:1|slice:"1:" }}%
+            {% endif %}
+            respecto al mes anterior ({{ comprometido_este_mes.anterior|moneda_cop }})
+          </p>
+        {% else %}
+          <p class="small mb-0" style="color: rgba(255,255,255,.78);">
+            Total de obligaciones del mes. Sin datos del mes anterior para comparar.
+          </p>
+        {% endif %}
+      </div>
+      <span class="d-none d-sm-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+            style="width:56px; height:56px; background: rgba(255,255,255,.14);">
+        <i class="bi bi-cash-coin" style="font-size: 1.6rem; color: #fff;"></i>
+      </span>
+    </div>
+  </div>
+
   {# ---------- Cifras generales ---------- #}
-  <div class="row g-3 mb-4">
+  <div class="row g-3 mb-3">
     <div class="col-6 col-lg-3">
       <div class="pr-tarjeta p-3 h-100">
-        <p class="pr-etiqueta mb-1">Obligaciones</p>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Obligaciones</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-acento-suave); color: var(--pr-acento);">
+            <i class="bi bi-receipt"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0">{{ totales.cantidad }}</p>
         <p class="small text-secondary mb-0">{{ totales.valor_total|moneda_cop }} en total</p>
       </div>
     </div>
     <div class="col-6 col-lg-3">
       <div class="pr-tarjeta p-3 h-100">
-        <p class="pr-etiqueta mb-1">Pagado</p>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Pagado</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-pagado-bg); color: var(--pr-pagado);">
+            <i class="bi bi-check-circle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0" style="color: var(--pr-pagado);">{{ totales.pagado|moneda_cop }}</p>
         <p class="small text-secondary mb-0">{{ totales.cantidad_pagadas }} obligación{{ totales.cantidad_pagadas|pluralize:"es" }}</p>
       </div>
     </div>
     <div class="col-6 col-lg-3">
       <div class="pr-tarjeta p-3 h-100">
-        <p class="pr-etiqueta mb-1">Pendiente</p>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Pendiente</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-pendiente-bg); color: var(--pr-pendiente);">
+            <i class="bi bi-circle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0">{{ totales.pendiente|moneda_cop }}</p>
         <p class="small text-secondary mb-0">Sin pagar</p>
       </div>
     </div>
     <div class="col-6 col-lg-3">
       <div class="pr-tarjeta p-3 h-100">
-        <p class="pr-etiqueta mb-1">Vencido</p>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Vencido</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-vencido-bg); color: var(--pr-vencido);">
+            <i class="bi bi-exclamation-triangle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0" style="color: var(--pr-vencido);">{{ totales.vencido|moneda_cop }}</p>
         <p class="small text-secondary mb-0">Requiere atención</p>
       </div>
     </div>
   </div>
 
-  {# ---------- Progreso de pago ---------- #}
+  {# ---------- Progreso de pago (indicador pequeño, no una gráfica más) ---------- #}
   <div class="pr-tarjeta p-4 mb-4">
     <div class="d-flex justify-content-between align-items-baseline mb-2">
       <p class="pr-etiqueta mb-0">Obligaciones pagadas</p>
@@ -81,13 +131,39 @@
     {% endif %}
   </div>
 
+  {# Las tres gráficas principales: cada una responde una pregunta. #}
+
+  {# ---------- Gráfica 1: ¿Cuánto voy a gastar los próximos meses? ---------- #}
+  <div class="pr-tarjeta p-4 mb-3">
+    <p class="pr-etiqueta mb-1">Dinero comprometido por mes</p>
+    <p class="text-secondary small mb-3">
+      Cuánto vence cada mes, se haya pagado o no. Incluye lo que ya generaron
+      tus obligaciones mensuales.
+    </p>
+    <div style="position: relative; height: 260px;">
+      <canvas id="graficoComprometido" aria-label="Dinero comprometido por mes"
+              role="img"></canvas>
+    </div>
+  </div>
+
   <div class="row g-3 mb-3">
 
-    {# ---------- Obligaciones por estado ---------- #}
-    <div class="col-12 col-lg-5">
+    {# ---------- Gráfica 2: ¿En qué gasto más? ---------- #}
+    <div class="col-12 col-lg-6">
       <div class="pr-tarjeta p-4 h-100">
-        <p class="pr-etiqueta mb-3">Obligaciones por estado</p>
-        <div style="position: relative; height: 260px;">
+        <p class="pr-etiqueta mb-1">¿En qué categorías tengo más dinero comprometido?</p>
+        <p class="text-secondary small mb-3">Valor total por categoría, de mayor a menor.</p>
+        <div style="position: relative; height: 280px;">
+          <canvas id="graficoCategoria" aria-label="Valor total por categoría" role="img"></canvas>
+        </div>
+      </div>
+    </div>
+
+    {# ---------- Gráfica 3: ¿Cómo están mis obligaciones? ---------- #}
+    <div class="col-12 col-lg-6">
+      <div class="pr-tarjeta p-4 h-100">
+        <p class="pr-etiqueta mb-3">Estado de mis obligaciones</p>
+        <div style="position: relative; height: 200px;">
           <canvas id="graficoEstado" aria-label="Distribución de obligaciones por estado"
                   role="img"></canvas>
         </div>
@@ -106,69 +182,102 @@
         </table>
       </div>
     </div>
+  </div>
 
-    {# ---------- Valor por categoría ---------- #}
-    <div class="col-12 col-lg-7">
+  {# Cuándo pago (quincena) y qué viene (próximos vencimientos). #}
+  <div class="row g-3 mb-3">
+
+    {# ---------- Quincena ---------- #}
+    <div class="col-12 col-lg-6">
       <div class="pr-tarjeta p-4 h-100">
-        <p class="pr-etiqueta mb-3">Valor por categoría</p>
-        <div style="position: relative; height: 300px;">
-          <canvas id="graficoCategoria" aria-label="Valor total por categoría" role="img"></canvas>
-        </div>
+        <p class="pr-etiqueta mb-3">¿Cuánto tengo comprometido por quincena?</p>
+
+        {% if quincena.hay_datos %}
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <p class="small text-secondary mb-1">Primera quincena (1 al 15)</p>
+              <p class="pr-cifra mb-0">{{ quincena.primera.total|moneda_cop }}</p>
+              <p class="small text-secondary mb-0">
+                {{ quincena.primera.cantidad }} obligación{{ quincena.primera.cantidad|pluralize:"es" }}
+              </p>
+            </div>
+            <div class="col-6 text-end">
+              <p class="small text-secondary mb-1">Segunda quincena (16 al fin de mes)</p>
+              <p class="pr-cifra mb-0">{{ quincena.segunda.total|moneda_cop }}</p>
+              <p class="small text-secondary mb-0">
+                {{ quincena.segunda.cantidad }} obligación{{ quincena.segunda.cantidad|pluralize:"es" }}
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex rounded-pill overflow-hidden" style="height: 10px;" role="img"
+               aria-label="Primera quincena {{ quincena.primera.porcentaje }}%, segunda quincena {{ quincena.segunda.porcentaje }}%">
+            <div style="width: {{ quincena.primera.porcentaje }}%; background: var(--pr-acento);"></div>
+            <div style="width: {{ quincena.segunda.porcentaje }}%; background: var(--pr-proximo);"></div>
+          </div>
+
+          <p class="small text-secondary mt-2 mb-0">
+            {% if quincena.primera.porcentaje >= quincena.segunda.porcentaje %}
+              La primera quincena concentra más dinero: {{ quincena.primera.porcentaje }}% del mes.
+            {% else %}
+              La segunda quincena concentra más dinero: {{ quincena.segunda.porcentaje }}% del mes.
+            {% endif %}
+          </p>
+        {% else %}
+          <p class="text-secondary small mb-0">
+            📊 Aún no hay suficientes datos para mostrar esta estadística.
+          </p>
+        {% endif %}
       </div>
     </div>
-  </div>
 
-  {# ---------- Evolución ---------- #}
-  <div class="pr-tarjeta p-4 mb-3">
-    <p class="pr-etiqueta mb-1">Evolución de los últimos 6 meses</p>
-    <p class="text-secondary small mb-3">
-      Agrupado por mes de vencimiento.
-    </p>
-    <div style="position: relative; height: 300px;">
-      <canvas id="graficoEvolucion" aria-label="Evolución mensual de pagos" role="img"></canvas>
-    </div>
-  </div>
-
-  {# ---------- Detalle por categoría ---------- #}
-  <div class="pr-tarjeta p-4">
-    <p class="pr-etiqueta mb-3">Detalle por categoría</p>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle mb-0">
-        <thead>
-          <tr>
-            <th scope="col">Categoría</th>
-            <th scope="col" class="text-end">Cantidad</th>
-            <th scope="col" class="text-end">Valor</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for fila in por_categoria %}
-            <tr>
-              <td>
-                <span class="rounded-circle d-inline-block me-2"
-                      style="width:10px; height:10px; background: {{ fila.categoria__color }};"></span>
-                {{ fila.categoria__nombre }}
-              </td>
-              <td class="text-end">{{ fila.cantidad }}</td>
-              <td class="text-end fw-semibold">{{ fila.total|moneda_cop }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {# ---------- Próximos vencimientos ---------- #}
+    <div class="col-12 col-lg-6">
+      <div class="pr-tarjeta p-4 h-100">
+        <p class="pr-etiqueta mb-3">Próximos vencimientos</p>
+        {% if proximos %}
+          <ul class="list-unstyled mb-0">
+            {% for obligacion in proximos %}
+              <li class="d-flex justify-content-between align-items-center gap-2 py-2
+                         {% if not forloop.last %}border-bottom{% endif %}">
+                <div>
+                  <a href="{% url 'obligaciones:detalle' obligacion.pk %}" class="text-body text-decoration-none fw-semibold">
+                    {{ obligacion.concepto }}
+                  </a>
+                  <p class="mb-0 small text-secondary">{{ obligacion.categoria.nombre }}</p>
+                </div>
+                <div class="text-end flex-shrink-0">
+                  <p class="mb-0 small fw-semibold" style="font-variant-numeric: tabular-nums;">
+                    {{ obligacion.monto|moneda_cop }}
+                  </p>
+                  <span class="pr-estado {{ obligacion.estado|clase_estado }} small">
+                    {{ obligacion.fecha_vencimiento|texto_vencimiento }}
+                  </span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-secondary small mb-0">No tienes obligaciones pendientes por vencer.</p>
+        {% endif %}
+      </div>
     </div>
   </div>
 
   {{ grafico_estado|json_script:"datosEstado" }}
   {{ grafico_categoria|json_script:"datosCategoria" }}
-  {{ grafico_evolucion|json_script:"datosEvolucion" }}
+  {{ grafico_comprometido|json_script:"datosComprometido" }}
 
 {% endif %}
+
+{% include "partials/asistente_ia.html" with flotante=True %}
 
 {% endblock %}
 
 {% block js_extra %}
 {% if hay_datos %}
 <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/chart-plugins.js' %}"></script>
 <script src="{% static 'js/estadisticas.js' %}"></script>
 {% endif %}
 {% endblock %}

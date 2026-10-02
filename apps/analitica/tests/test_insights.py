@@ -288,7 +288,7 @@ class VistaInsightsTests(BaseInsights):
     def test_declara_que_no_usa_inteligencia_artificial(self):
         """§19: si el análisis es por reglas, la interfaz debe decirlo."""
         respuesta = self.client.get(reverse("analitica:insights"))
-        self.assertContains(respuesta, "No intervienen modelos de inteligencia artificial")
+        self.assertContains(respuesta, "sin inteligencia artificial")
 
     def test_cada_insight_declara_su_fuente(self):
         self.crear("Energía", 185000, -4)

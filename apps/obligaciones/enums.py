@@ -9,6 +9,20 @@ class AmbitoCategoria(models.TextChoices):
     AMBOS = "AMBOS", "Personal y empresa"
 
 
+class FrecuenciaObligacion(models.TextChoices):
+    """Con qué periodicidad se paga una obligación.
+
+    UNICA es el comportamiento de siempre: la obligación vive un solo mes.
+    MENSUAL marca la obligación como plantilla de una serie: un proceso
+    aparte genera un registro de Obligacion independiente por cada mes
+    (ver services/recurrencia.py), cada uno con su propio estado y sus
+    propios recordatorios.
+    """
+
+    UNICA = "UNICA", "Pago único"
+    MENSUAL = "MENSUAL", "Mensual"
+
+
 class Prioridad(models.TextChoices):
     """Prioridad que el usuario asigna a mano (§7)."""
 

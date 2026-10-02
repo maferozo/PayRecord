@@ -95,6 +95,42 @@ class ResumenTests(BaseDashboard):
         datos = selectors.resumen(self.usuario, self.hoy)
         self.assertEqual(datos["comprometido"], Decimal("100000"))
 
+    def test_un_periodo_mensual_futuro_no_cuenta_todavia(self):
+        """El generador de recurrencia crea varios meses por adelantado
+        (§obligaciones mensuales) para que el calendario los muestre, pero
+        eso no significa que ya se deban: solo el mes en curso cuenta.
+        """
+        from apps.obligaciones.enums import FrecuenciaObligacion
+
+        raiz = self.crear("Internet", 100000, 2)  # vence este mes
+        raiz.frecuencia = FrecuenciaObligacion.MENSUAL
+        raiz.save()
+        Obligacion.objects.create(
+            usuario=self.usuario,
+            concepto="Internet",
+            monto=Decimal("100000"),
+            fecha_vencimiento=self.hoy + timedelta(days=45),  # el mes siguiente
+            categoria=self.servicios,
+            frecuencia=FrecuenciaObligacion.MENSUAL,
+            obligacion_recurrente=raiz,
+        )
+
+        datos = selectors.resumen(self.usuario, self.hoy)
+
+        # Solo el mes en curso (la raíz): el periodo futuro todavía no cuenta.
+        self.assertEqual(datos["comprometido"], Decimal("100000"))
+        self.assertEqual(datos["total_obligaciones"], 1)
+
+    def test_una_obligacion_lejana_registrada_a_mano_si_cuenta(self):
+        """Distinto del caso anterior: esta no la generó el sistema, la
+        registró el usuario. Por lejana que sea su fecha, sigue contando —
+        así se comportó siempre PAYRECORD.
+        """
+        self.crear("Matrícula", 3000000, 90)
+
+        datos = selectors.resumen(self.usuario, self.hoy)
+        self.assertEqual(datos["comprometido"], Decimal("3000000"))
+
 
 class PrioridadesTests(BaseDashboard):
     """§12: qué atender primero."""

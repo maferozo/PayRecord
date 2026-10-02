@@ -1,13 +1,14 @@
 {% extends "base.html" %}
-{% load formato obligaciones_extras %}
+{% load static formato obligaciones_extras %}
 
-{% block titulo %}Dashboard — PAYRECORD{% endblock %}
+{% block titulo %}PayRecord — Dashboard{% endblock %}
 
 {% block contenido %}
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <div>
     <h1 class="h4 mb-1">Hola, {{ user.get_short_name }}</h1>
+    <p class="mb-1">Resumen de tus obligaciones financieras</p>
     <p class="text-secondary small mb-0">
       {{ hoy|date:"l, d \d\e F \d\e Y"|capfirst }}
       {% if user.empresa %} · {{ user.empresa.nombre }}{% endif %}
@@ -28,18 +29,25 @@
         Es el total de lo que aún no has pagado.
       </p>
     </div>
-    <i class="bi bi-wallet2 d-none d-sm-block"
-       style="font-size: 3rem; color: rgba(255,255,255,.28);"></i>
+    <span class="d-none d-sm-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+          style="width:56px; height:56px; background: rgba(255,255,255,.14);">
+      <i class="bi bi-wallet2" style="font-size: 1.6rem; color: #fff;"></i>
+    </span>
   </div>
 </div>
 
-{# ---------- Resumen por estado ---------- #}
-<div class="row g-3 mb-4">
+{# ---------- Resumen por estado: tarjetas KPI con icono ---------- #}
+<div class="row g-3 mb-3">
   {% with r=resumen %}
   <div class="col-6 col-lg-3">
     <a href="{% url 'obligaciones:lista' %}?estado=VENCIDA" class="text-decoration-none">
       <div class="pr-tarjeta pr-tarjeta-enlace p-3 h-100">
-        <span class="pr-estado pr-estado-vencida mb-2"><i class="bi bi-x-circle"></i>Vencidas</span>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Vencidas</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-vencido-bg); color: var(--pr-vencido);">
+            <i class="bi bi-x-circle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0">{{ r.vencidas.cantidad }}</p>
         <p class="small text-secondary mb-0">{{ r.vencidas.total|moneda_cop }}</p>
       </div>
@@ -47,8 +55,13 @@
   </div>
   <div class="col-6 col-lg-3">
     <a href="{% url 'obligaciones:lista' %}?estado=PROXIMA_VENCER" class="text-decoration-none">
-      <div class="pr-tarjeta p-3 h-100">
-        <span class="pr-estado pr-estado-proxima_vencer mb-2"><i class="bi bi-exclamation-circle"></i>Próximas</span>
+      <div class="pr-tarjeta pr-tarjeta-enlace p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Próximas</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-proximo-bg); color: var(--pr-proximo);">
+            <i class="bi bi-exclamation-circle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0">{{ r.proximas.cantidad }}</p>
         <p class="small text-secondary mb-0">{{ r.proximas.total|moneda_cop }}</p>
       </div>
@@ -56,8 +69,13 @@
   </div>
   <div class="col-6 col-lg-3">
     <a href="{% url 'obligaciones:lista' %}?estado=PENDIENTE" class="text-decoration-none">
-      <div class="pr-tarjeta p-3 h-100">
-        <span class="pr-estado pr-estado-pendiente mb-2"><i class="bi bi-circle"></i>Pendientes</span>
+      <div class="pr-tarjeta pr-tarjeta-enlace p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Pendientes</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-pendiente-bg); color: var(--pr-pendiente);">
+            <i class="bi bi-circle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0">{{ r.pendientes.cantidad }}</p>
         <p class="small text-secondary mb-0">{{ r.pendientes.total|moneda_cop }}</p>
       </div>
@@ -65,8 +83,13 @@
   </div>
   <div class="col-6 col-lg-3">
     <a href="{% url 'obligaciones:lista' %}?estado=PAGADA" class="text-decoration-none">
-      <div class="pr-tarjeta p-3 h-100">
-        <span class="pr-estado pr-estado-pagada mb-2"><i class="bi bi-check-circle"></i>Pagadas</span>
+      <div class="pr-tarjeta pr-tarjeta-enlace p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="pr-etiqueta mb-0">Pagadas</span>
+          <span class="pr-icono-kpi" style="background: var(--pr-pagado-bg); color: var(--pr-pagado);">
+            <i class="bi bi-check-circle"></i>
+          </span>
+        </div>
         <p class="pr-cifra mb-0">{{ r.pagadas.cantidad }}</p>
         <p class="small text-secondary mb-0">{{ r.pagadas.total|moneda_cop }}</p>
       </div>
@@ -75,55 +98,44 @@
   {% endwith %}
 </div>
 
-<div class="row g-3">
-
-  {# ---------- Prioridades ---------- #}
-  <div class="col-12 col-lg-7">
-    <div class="pr-tarjeta p-4 h-100">
-      <div class="d-flex justify-content-between align-items-baseline mb-1">
-        <p class="pr-etiqueta mb-0">Prioridades de hoy</p>
+{% if comprometido_mensual %}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-8">
+      <div class="pr-tarjeta p-4 h-100">
+        <p class="pr-etiqueta mb-1">Dinero comprometido por mes</p>
+        <p class="text-secondary small mb-3">Cuánto vence cada uno de los próximos meses.</p>
+        <div style="position: relative; height: 220px;">
+          <canvas id="graficoComprometidoDashboard" aria-label="Dinero comprometido por mes"
+                  role="img"></canvas>
+        </div>
       </div>
-      <p class="text-secondary small mb-3">
-        Orden calculado a partir del vencimiento, el monto, tu prioridad y la
-        categoría. Cada obligación muestra por qué está aquí.
-      </p>
-
-      {% for obligacion, prioridad in prioridades %}
-        <div class="d-flex gap-3 align-items-start py-3 {% if not forloop.last %}border-bottom{% endif %}">
-          <span class="fs-5 flex-shrink-0" aria-hidden="true">{{ prioridad.indicador }}</span>
-
-          <div class="flex-grow-1 min-w-0">
-            <div class="d-flex flex-wrap justify-content-between gap-2">
-              <a href="{% url 'obligaciones:detalle' obligacion.pk %}"
-                 class="fw-semibold text-decoration-none text-truncate">
-                {{ obligacion.concepto }}
-              </a>
-              <span class="fw-semibold" style="font-variant-numeric: tabular-nums;">
-                {{ obligacion.monto|moneda_cop }}
-              </span>
-            </div>
-
-            <ul class="list-unstyled mb-0 mt-1">
-              {% for motivo in prioridad.motivos %}
-                <li class="small text-secondary">
-                  <i class="bi bi-dot"></i>{{ motivo }}
-                </li>
-              {% endfor %}
-            </ul>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="pr-tarjeta p-4 h-100 d-flex flex-column">
+        <p class="pr-etiqueta mb-3">Obligaciones pagadas</p>
+        {% if porcentaje_pagadas is not None %}
+          <div style="position: relative; height: 180px;" class="flex-grow-1">
+            <canvas id="graficoPagadasDashboard" aria-label="Porcentaje de obligaciones pagadas"
+                    role="img"></canvas>
           </div>
-        </div>
-      {% empty %}
-        <div class="text-center text-secondary py-4">
-          <i class="bi bi-check2-circle fs-1 d-block mb-2"></i>
-          No tienes obligaciones pendientes. Todo al día.
-        </div>
-      {% endfor %}
+          <p class="small text-secondary text-center mb-0 mt-2">
+            {{ resumen.pagadas.cantidad }} de {{ resumen.total_obligaciones }} obligaciones
+          </p>
+        {% else %}
+          <p class="text-secondary small mb-0">Aún no tienes obligaciones registradas.</p>
+        {% endif %}
+      </div>
     </div>
   </div>
+  {{ grafico_comprometido|json_script:"datosComprometidoDashboard" }}
+  {{ grafico_estado_dashboard|json_script:"datosPagadasDashboard" }}
+{% endif %}
+
+<div class="row g-3">
 
   {# ---------- Próximas ---------- #}
-  <div class="col-12 col-lg-5">
-    <div class="pr-tarjeta p-4 mb-3">
+  <div class="col-12 col-md-6 {% if proveedores %}col-lg-4{% else %}col-lg-6{% endif %}">
+    <div class="pr-tarjeta p-4 h-100">
       <p class="pr-etiqueta mb-3">Próximas por fecha</p>
 
       {% for obligacion in proximas %}
@@ -137,7 +149,9 @@
                class="d-block text-decoration-none text-truncate small fw-semibold">
               {{ obligacion.concepto }}
             </a>
-            <span class="small text-secondary">{{ obligacion.fecha_vencimiento|texto_vencimiento }}</span>
+            <span class="pr-estado {{ obligacion.estado|clase_estado }}" style="padding: 0; background: none;">
+              {{ obligacion.fecha_vencimiento|texto_vencimiento }}
+            </span>
           </div>
           <span class="small fw-semibold flex-shrink-0" style="font-variant-numeric: tabular-nums;">
             {{ obligacion.monto|moneda_cop }}
@@ -147,9 +161,11 @@
         <p class="text-secondary small mb-0">Nada por vencer.</p>
       {% endfor %}
     </div>
+  </div>
 
-    {# ---------- Por categoría ---------- #}
-    <div class="pr-tarjeta p-4 {% if proveedores %}mb-3{% endif %}">
+  {# ---------- Por categoría ---------- #}
+  <div class="col-12 col-md-6 {% if proveedores %}col-lg-4{% else %}col-lg-6{% endif %}">
+    <div class="pr-tarjeta p-4 h-100">
       <p class="pr-etiqueta mb-3">Comprometido por categoría</p>
       {% for fila in por_categoria %}
         <div class="d-flex align-items-center gap-2 py-1">
@@ -165,10 +181,12 @@
         <p class="text-secondary small mb-0">Sin datos todavía.</p>
       {% endfor %}
     </div>
+  </div>
 
-    {# ---------- Proveedores (solo empresa) ---------- #}
-    {% if proveedores %}
-      <div class="pr-tarjeta p-4">
+  {# ---------- Proveedores (solo empresa) ---------- #}
+  {% if proveedores %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="pr-tarjeta p-4 h-100">
         <div class="d-flex justify-content-between align-items-baseline mb-3">
           <p class="pr-etiqueta mb-0">Principales proveedores</p>
           <a href="{% url 'obligaciones:proveedor_lista' %}" class="small text-decoration-none">
@@ -186,9 +204,19 @@
           </a>
         {% endfor %}
       </div>
-    {% endif %}
-  </div>
+    </div>
+  {% endif %}
 
 </div>
 
+{% include "partials/asistente_ia.html" with flotante=True %}
+
+{% endblock %}
+
+{% block js_extra %}
+{% if comprometido_mensual %}
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/chart-plugins.js' %}"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endif %}
 {% endblock %}

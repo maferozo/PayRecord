@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block titulo %}Insights — PAYRECORD{% endblock %}
+{% block titulo %}PayRecord — Insights{% endblock %}
 
 {% block contenido %}
 
@@ -16,16 +16,15 @@
   </a>
 </div>
 
+{% include "partials/asistente_ia.html" with flotante=False %}
+
 {# §19: si el análisis se basa en reglas, se dice. No se presenta como IA. #}
-<div class="alert alert-light border d-flex gap-2 align-items-start small mb-4">
-  <i class="bi bi-info-circle mt-1"></i>
-  <div>
-    Estas observaciones las calcula el sistema aplicando
-    {{ total_reglas }} reglas sobre tus obligaciones registradas.
-    <strong>No intervienen modelos de inteligencia artificial.</strong>
-    Cada tarjeta indica de qué dato sale su cifra.
-  </div>
-</div>
+<p class="pr-etiqueta mt-4 mb-1">💡 Observaciones automáticas</p>
+<p class="pr-ia-nota-insights mb-3">
+  PayRecord analiza tus obligaciones mediante reglas para identificar
+  patrones relevantes. <strong>{{ total_reglas }} reglas activas</strong> —
+  sin inteligencia artificial. Cada observación indica de qué dato sale su cifra.
+</p>
 
 {% if insights %}
   <div class="row g-3">
@@ -42,7 +41,7 @@
                          {% elif insight.tono == 'positivo' %}
                            background: var(--pr-pagado-bg); color: var(--pr-pagado);
                          {% else %}
-                           background: var(--pr-azul-100); color: var(--pr-azul-700);
+                           background: var(--pr-acento-suave); color: var(--pr-acento);
                          {% endif %}">
               <i class="bi {{ insight.icono }} fs-5"></i>
             </span>

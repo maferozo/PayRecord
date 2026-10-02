@@ -9,19 +9,24 @@ from . import selectors
 
 
 def _catch_up_recordatorios(request, hoy):
-    """Genera los recordatorios atrasados al abrir el dashboard (§15, §16).
+    """Genera los periodos y recordatorios atrasados al abrir el dashboard.
 
     La tarea programada no corre si el equipo estaba apagado, lo que en un
-    portátil pasa casi siempre. Como el proceso es idempotente por
-    restricción de base de datos, dispararlo aquí no puede duplicar nada.
+    portátil pasa casi siempre. Como ambos procesos son idempotentes por
+    restricción de base de datos, dispararlos aquí no puede duplicar nada.
     Se limita a una vez al día por sesión para no repetir trabajo inútil.
+
+    Los periodos se generan primero (§obligaciones mensuales): un mes nuevo
+    tiene que existir antes de que pueda tener sus propios recordatorios.
     """
     marca = request.session.get("ultimo_catchup")
     if marca == hoy.isoformat():
         return
 
+    from apps.obligaciones.services.recurrencia import generar as generar_periodos
     from apps.recordatorios.services.generacion import procesar
 
+    generar_periodos(hoy=hoy, usuario=request.user)
     procesar(hoy=hoy, usuario=request.user)
     request.session["ultimo_catchup"] = hoy.isoformat()
 
@@ -34,13 +39,43 @@ def inicio(request):
 
     _catch_up_recordatorios(request, hoy)
 
+    # Reutiliza el cálculo ya construido para /estadisticas/: el dashboard
+    # no vuelve a calcular nada, solo muestra la misma serie en otra pantalla.
+    from apps.analitica.selectors import comprometido_por_mes
+    from apps.analitica.services import asistente_ia
+
+    comprometido_mensual = comprometido_por_mes(usuario, meses_adelante=4, hoy=hoy)
+    resumen = selectors.resumen(usuario, hoy)
+
+    porcentaje_pagadas = (
+        round(resumen["pagadas"]["cantidad"] * 100 / resumen["total_obligaciones"])
+        if resumen["total_obligaciones"] else None
+    )
+
     contexto = {
         "hoy": hoy,
-        "resumen": selectors.resumen(usuario, hoy),
-        "prioridades": selectors.prioridades_del_dia(usuario, limite=5, hoy=hoy),
+        "resumen": resumen,
+        "porcentaje_pagadas": porcentaje_pagadas,
         "proximas": selectors.proximas_obligaciones(usuario, limite=6, hoy=hoy),
         "por_categoria": selectors.gasto_por_categoria(usuario, hoy=hoy),
         "proveedores": selectors.principales_proveedores(usuario, hoy=hoy),
+        "comprometido_mensual": comprometido_mensual,
+        "grafico_comprometido": {
+            "etiquetas": [fila["etiqueta"] for fila in comprometido_mensual],
+            "valores": [float(fila["total"]) for fila in comprometido_mensual],
+            # El mes en curso se resalta con otro tono en la gráfica: no es
+            # solo estética, ayuda a distinguir "esto ya es real" de "esto
+            # es lo que generaron las obligaciones mensuales por adelantado".
+            "mes_actual": [fila["es_mes_actual"] for fila in comprometido_mensual],
+        },
+        "grafico_estado_dashboard": {
+            "cantidades": [
+                resumen["pagadas"]["cantidad"],
+                resumen["pendientes"]["cantidad"] + resumen["proximas"]["cantidad"] + resumen["vencidas"]["cantidad"],
+            ],
+            "porcentaje": porcentaje_pagadas,
+        },
+        "asistente_disponible": asistente_ia.disponible(),
     }
     return render(request, "dashboard/inicio.html", contexto)
 
@@ -54,6 +89,8 @@ def calendario(request):
     """
     usuario = request.user
     hoy = timezone.localdate()
+
+    _catch_up_recordatorios(request, hoy)
 
     anio, mes = cal.normalizar_mes(
         request.GET.get("anio", hoy.year), request.GET.get("mes", hoy.month), hoy

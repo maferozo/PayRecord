@@ -198,3 +198,15 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-responder@payrecord.l
 # --- Reglas de negocio de PAYRECORD ---
 
 DIAS_PROXIMO_VENCIMIENTO_DEFAULT = env.int("DIAS_PROXIMO_VENCIMIENTO_DEFAULT", default=7)
+
+
+# --- Asistente IA: PayRecord AI (usa la API gratuita de Gemini) ---
+# Vacío = el asistente se muestra desactivado en la interfaz; el resto de la
+# aplicación no depende de esto para nada.
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+# Centralizado aquí para poder cambiarlo sin tocar código. "latest" apunta
+# siempre al modelo gratuito vigente de esa familia. Se usa Flash-Lite (no
+# Flash) porque, probado en vivo, Lite respondió sin fallos y en <1s
+# mientras el Flash normal fallaba seguido por saturación del nivel
+# gratuito — si eso cambia más adelante, basta con cambiar esta variable.
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-flash-lite-latest")

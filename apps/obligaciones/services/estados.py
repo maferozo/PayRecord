@@ -13,6 +13,7 @@ Este módulo expone dos caminos equivalentes:
 Ambos deben dar siempre el mismo resultado; hay pruebas que lo verifican.
 """
 
+import calendar
 from datetime import date, timedelta
 
 from django.db.models import Case, CharField, Value, When
@@ -62,3 +63,15 @@ def dias_para_vencer(fecha_vencimiento, hoy=None):
     """Días que faltan. Negativo si la fecha ya pasó."""
     hoy = hoy or date.today()
     return (fecha_vencimiento - hoy).days
+
+
+def fin_de_mes(fecha):
+    """El último día del mes de `fecha` (28, 29, 30 o 31 según corresponda).
+
+    Se usa para acotar "cuánto debo comprometido" al mes en curso: con las
+    obligaciones mensuales generando varios meses por adelantado para que el
+    calendario los muestre, sumar todo lo pendiente sin este límite mezclaría
+    en un solo número obligaciones de meses que todavía no llegan.
+    """
+    ultimo_dia = calendar.monthrange(fecha.year, fecha.month)[1]
+    return fecha.replace(day=ultimo_dia)

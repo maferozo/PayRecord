@@ -1,0 +1,93 @@
+{% load static %}
+{# Un mismo parcial para las dos formas en que aparece PayRecord AI: #}
+{# flotante=True (Dashboard/Estadísticas) o flotante=False (Insights, siempre abierto). #}
+
+{% if asistente_disponible %}
+  <div class="pr-ia {% if flotante %}pr-ia-flotante{% endif %}"
+       data-pr-ia {% if flotante %}hidden{% endif %}>
+
+    <div class="pr-ia-cabecera">
+      <span class="pr-ia-avatar"><i class="bi bi-robot"></i></span>
+      <div class="flex-grow-1 min-w-0">
+        <p class="mb-0 fw-semibold">PayRecord AI</p>
+        <p class="mb-0 small text-secondary">Tu asistente financiero</p>
+      </div>
+      <span class="pr-ia-estado" title="El asistente está disponible">
+        <span class="pr-ia-punto"></span>En línea
+      </span>
+      {% if flotante %}
+        <button type="button" class="btn-close ms-1" aria-label="Cerrar" data-pr-ia-cerrar></button>
+      {% endif %}
+    </div>
+
+    <div class="pr-ia-conversacion" data-pr-ia-conversacion>
+      <div class="pr-ia-fila pr-ia-fila-ia">
+        <span class="pr-ia-avatar-mini"><i class="bi bi-robot"></i></span>
+        <div class="pr-ia-burbuja pr-ia-burbuja-ia">
+          <p class="pr-ia-linea">Hola 👋</p>
+          <p class="pr-ia-linea">Soy tu asistente financiero de PayRecord. Puedo ayudarte a
+          entender tus obligaciones, vencimientos, pagos y dinero comprometido.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pr-ia-sugerencias" data-pr-ia-sugerencias>
+      <button type="button" class="pr-ia-chip" data-pr-ia-sugerencia
+              data-pregunta="¿Cuánto tengo pendiente?">
+        💰 ¿Cuánto debo?
+      </button>
+      <button type="button" class="pr-ia-chip" data-pr-ia-sugerencia
+              data-pregunta="¿Cuál es mi mayor obligación?">
+        📌 Mayor obligación
+      </button>
+      <button type="button" class="pr-ia-chip" data-pr-ia-sugerencia
+              data-pregunta="¿Qué debo pagar próximamente?">
+        📅 Próximo pago
+      </button>
+      <button type="button" class="pr-ia-chip" data-pr-ia-sugerencia
+              data-pregunta="¿En qué categoría tengo más dinero comprometido?">
+        📊 Mayor categoría
+      </button>
+      <button type="button" class="pr-ia-chip" data-pr-ia-sugerencia
+              data-pregunta="Analiza mis obligaciones.">
+        ✨ Analizar
+      </button>
+    </div>
+
+    <button type="button" class="pr-ia-boton-resumen mb-2" data-pr-ia-resumen>
+      <i class="bi bi-stars me-1"></i>Generar resumen financiero
+    </button>
+
+    <form class="pr-ia-barra" data-pr-ia-formulario>
+      {% csrf_token %}
+      <input type="text" maxlength="500"
+             placeholder="Escribe una pregunta sobre tus obligaciones..."
+             data-pr-ia-input aria-label="Pregunta para PayRecord AI">
+      <button type="submit" class="pr-ia-boton-enviar" data-pr-ia-enviar aria-label="Enviar">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </form>
+
+    <p class="pr-ia-aviso">
+      Solo consulta y explica tus datos registrados. No ejecuta pagos ni
+      modifica obligaciones, y no es un asesor financiero profesional.
+    </p>
+  </div>
+
+  {% if flotante %}
+    <button type="button" class="pr-ia-boton-flotante" data-pr-ia-abrir aria-label="Abrir PayRecord AI">
+      🤖
+    </button>
+  {% endif %}
+
+{% elif not flotante %}
+  <div class="pr-tarjeta p-4 mb-3 text-secondary small">
+    🤖 <strong>PayRecord AI</strong> todavía no está configurado en este equipo.
+    Cuando se agregue la clave de la API en el <code>.env</code>, el asistente
+    aparecerá aquí.
+  </div>
+{% endif %}
+
+{% if asistente_disponible %}
+  <script src="{% static 'js/asistente-ia.js' %}" defer></script>
+{% endif %}

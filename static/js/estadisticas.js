@@ -36,7 +36,7 @@
   const datos = {
     estado: leer("datosEstado"),
     categoria: leer("datosCategoria"),
-    evolucion: leer("datosEvolucion"),
+    comprometido: leer("datosComprometido"),
   };
 
   let graficos = [];
@@ -57,7 +57,7 @@
       },
     };
 
-    // --- Obligaciones por estado ---
+    // --- Gráfica 3: Estado de mis obligaciones ---
     const lienzoEstado = document.getElementById("graficoEstado");
     if (datos.estado && lienzoEstado) {
       // El color sale del tema activo: los tonos oscuros del tema claro
@@ -72,6 +72,8 @@
         (clave, i) => token(tokensEstado[clave], datos.estado.colores[i])
       );
 
+      const totalObligaciones = datos.estado.cantidades.reduce((a, b) => a + b, 0);
+
       graficos.push(new Chart(lienzoEstado, {
         type: "doughnut",
         data: {
@@ -84,18 +86,64 @@
         },
         options: {
           ...comun,
-          cutout: "64%",
+          cutout: "68%",
           plugins: {
             legend: {
               position: "bottom",
               labels: { usePointStyle: true, boxWidth: 8, color: texto },
+            },
+            textoCentral: {
+              texto: String(totalObligaciones),
+              subtexto: totalObligaciones === 1 ? "obligación" : "obligaciones",
+              color: token("--pr-texto", "#141A2E"),
+              colorSubtexto: texto,
+              tamano: 24,
             },
           },
         },
       }));
     }
 
-    // --- Valor por categoría ---
+    // --- Gráfica 1: Dinero comprometido por mes ---
+    const lienzoComprometido = document.getElementById("graficoComprometido");
+    if (datos.comprometido && lienzoComprometido) {
+      // El mes en curso en un tono más fuerte que los que ya generó por
+      // adelantado el motor de obligaciones mensuales.
+      const fuerte = token("--pr-acento", "#5B5BD6");
+      const suave = token("--pr-acento-claro", "#8B8BF0");
+      const colores = (datos.comprometido.mes_actual || []).map(
+        (esActual) => (esActual ? fuerte : suave)
+      );
+
+      graficos.push(new Chart(lienzoComprometido, {
+        type: "bar",
+        data: {
+          labels: datos.comprometido.etiquetas,
+          datasets: [{
+            label: "Comprometido",
+            data: datos.comprometido.valores,
+            backgroundColor: colores.length ? colores : fuerte,
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          ...comun,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => pesos.format(ctx.parsed.y) } },
+          },
+          scales: {
+            x: { ticks: { color: texto }, grid: { display: false } },
+            y: {
+              ticks: { callback: (valor) => pesos.format(valor), color: texto },
+              grid: { color: rejilla },
+            },
+          },
+        },
+      }));
+    }
+
+    // --- Gráfica 2: ¿En qué categorías tengo más dinero comprometido? ---
     const lienzoCategoria = document.getElementById("graficoCategoria");
     if (datos.categoria && lienzoCategoria) {
       graficos.push(new Chart(lienzoCategoria, {
@@ -114,7 +162,17 @@
           indexAxis: "y",
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: (ctx) => pesos.format(ctx.parsed.x) } },
+            tooltip: {
+              callbacks: {
+                // La cantidad va en el tooltip: evita una torta aparte solo
+                // para mostrar ese mismo dato de otra forma.
+                label: (ctx) => {
+                  const cantidad = datos.categoria.cantidades[ctx.dataIndex];
+                  const obligaciones = cantidad === 1 ? "obligación" : "obligaciones";
+                  return `${pesos.format(ctx.parsed.x)} · ${cantidad} ${obligaciones}`;
+                },
+              },
+            },
           },
           scales: {
             x: {
@@ -122,50 +180,6 @@
               grid: { color: rejilla },
             },
             y: { ticks: { color: texto }, grid: { display: false } },
-          },
-        },
-      }));
-    }
-
-    // --- Evolución mensual ---
-    const lienzoEvolucion = document.getElementById("graficoEvolucion");
-    if (datos.evolucion && lienzoEvolucion) {
-      graficos.push(new Chart(lienzoEvolucion, {
-        type: "bar",
-        data: {
-          labels: datos.evolucion.etiquetas,
-          datasets: [
-            {
-              label: "Pagado",
-              data: datos.evolucion.pagado,
-              backgroundColor: token("--pr-pagado", "#15803D"),
-              borderRadius: 6,
-            },
-            {
-              label: "Sin pagar",
-              data: datos.evolucion.sin_pagar,
-              backgroundColor: token("--pr-proximo", "#B45309"),
-              borderRadius: 6,
-            },
-          ],
-        },
-        options: {
-          ...comun,
-          plugins: {
-            ...comun.plugins,
-            tooltip: {
-              callbacks: {
-                label: (ctx) => `${ctx.dataset.label}: ${pesos.format(ctx.parsed.y)}`,
-              },
-            },
-          },
-          scales: {
-            x: { stacked: true, ticks: { color: texto }, grid: { display: false } },
-            y: {
-              stacked: true,
-              ticks: { callback: (valor) => pesos.format(valor), color: texto },
-              grid: { color: rejilla },
-            },
           },
         },
       }));

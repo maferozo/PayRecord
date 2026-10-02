@@ -3,7 +3,7 @@ from decimal import Decimal
 from django import forms
 from django.utils import timezone
 
-from .enums import AmbitoCategoria, Prioridad
+from .enums import AmbitoCategoria, FrecuenciaObligacion, Prioridad
 from .models import Categoria, Obligacion
 
 # Paleta acotada: mantiene la coherencia visual de §22 y evita que el
@@ -116,6 +116,8 @@ class ObligacionForm(forms.ModelForm):
             "concepto",
             "monto",
             "fecha_vencimiento",
+            "frecuencia",
+            "fecha_fin",
             "categoria",
             "prioridad_usuario",
             "descripcion",
@@ -130,6 +132,8 @@ class ObligacionForm(forms.ModelForm):
             ),
             "monto": forms.NumberInput(attrs={"step": "0.01", "min": "0.01",
                                               "placeholder": "120000"}),
+            "frecuencia": forms.RadioSelect(),
+            "fecha_fin": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "descripcion": forms.Textarea(attrs={"rows": 3}),
             "enlace_pago": forms.URLInput(
                 attrs={"placeholder": "https://pagos.miempresa.com/factura"}
@@ -139,9 +143,13 @@ class ObligacionForm(forms.ModelForm):
         labels = {
             "prioridad_usuario": "¿Qué tan importante es para ti?",
             "enlace_pago": "Enlace de pago (opcional)",
+            "fecha_fin": "Repetir hasta (opcional)",
         }
         help_texts = {
             "enlace_pago": "PAYRECORD no realiza pagos: solo te lleva al enlace que indiques.",
+            "fecha_vencimiento": "Si es mensual, este es el primer pago; el día de este mes "
+                                  "se repite cada mes.",
+            "fecha_fin": "Vacío significa que se repite sin fecha de fin.",
         }
 
     recordatorios = forms.MultipleChoiceField(
@@ -172,7 +180,31 @@ class ObligacionForm(forms.ModelForm):
         for campo in ("descripcion", "enlace_pago"):
             self.fields[campo].required = False
 
+        self._preparar_recurrencia()
         self._preparar_recordatorios(usuario)
+
+    def _preparar_recurrencia(self):
+        """La frecuencia no se puede tocar una vez que ya es parte de una serie.
+
+        Cambiarla a mitad de camino dejaría periodos generados con una
+        raíz que ya no coincide con lo que el usuario ve en pantalla.
+        """
+        # No obligatorio: si no llega nada, se asume "Pago único" (igual que
+        # el valor por defecto del modelo), en vez de rechazar el formulario.
+        self.fields["frecuencia"].required = False
+
+        es_periodo = self.instance.obligacion_recurrente_id is not None
+        tiene_periodos = self.instance.pk and self.instance.periodos.exists()
+
+        if es_periodo or tiene_periodos:
+            self.fields["frecuencia"].disabled = True
+            self.fields["fecha_fin"].disabled = True
+            mensaje = (
+                "Es un periodo de una serie mensual y no se puede cambiar."
+                if es_periodo
+                else "Ya generó periodos mensuales, así que no se puede cambiar."
+            )
+            self.fields["frecuencia"].help_text = mensaje
 
     def _preparar_recordatorios(self, usuario):
         """Casillas de recordatorio (§13), marcadas según el caso.
@@ -232,6 +264,24 @@ class ObligacionForm(forms.ModelForm):
     def clean_concepto(self):
         return self.cleaned_data["concepto"].strip()
 
+    def clean(self):
+        """`fecha_fin` solo tiene sentido junto a una obligación mensual."""
+        datos = super().clean()
+        frecuencia = datos.get("frecuencia") or FrecuenciaObligacion.UNICA
+        datos["frecuencia"] = frecuencia
+        fecha_fin = datos.get("fecha_fin")
+        fecha_vencimiento = datos.get("fecha_vencimiento")
+
+        if fecha_fin and frecuencia != FrecuenciaObligacion.MENSUAL:
+            self.add_error(
+                "fecha_fin", "Solo se puede repetir hasta una fecha si la frecuencia es mensual."
+            )
+        elif fecha_fin and fecha_vencimiento and fecha_fin < fecha_vencimiento:
+            self.add_error(
+                "fecha_fin", "La fecha de fin no puede ser anterior al primer pago."
+            )
+        return datos
+
     def clean_proveedor(self):
         """Reutiliza la grafía ya usada para no multiplicar variantes (§26)."""
         from .services.proveedores import normalizar
@@ -253,6 +303,14 @@ class ObligacionForm(forms.ModelForm):
             from apps.recordatorios.services.generacion import sincronizar
 
             sincronizar(obligacion)
+
+            # Si es la raíz de una serie mensual, los meses siguientes se
+            # generan ya mismo: no tiene sentido que el usuario tenga que
+            # esperar a la próxima vez que abra el dashboard para verlos.
+            if obligacion.es_mensual and obligacion.obligacion_recurrente_id is None:
+                from .services.recurrencia import generar as generar_periodos
+
+                generar_periodos(usuario=self.usuario)
 
         return obligacion
 

@@ -431,6 +431,20 @@ a.pr-tarjeta:hover,
 .pr-tarjeta-destacada .pr-cifra { color: #fff; }
 
 
+/* --- Icono de las tarjetas KPI (dashboard y estadísticas) --- */
+
+.pr-icono-kpi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: .95rem;
+  flex-shrink: 0;
+}
+
+
 /* --- Distintivos de estado --- */
 
 .pr-estado {
@@ -692,4 +706,310 @@ button:focus-visible,
   .pr-dia { min-height: 58px; padding: .25rem; }
   .pr-dia-monto { display: none; }
   .pr-contenido { padding-top: 1.15rem; }
+}
+
+
+/* --- PayRecord AI (§ asistente IA) --- */
+
+.pr-ia {
+  background: var(--pr-superficie);
+  border: 1px solid var(--pr-borde);
+  border-radius: var(--pr-radio);
+  box-shadow: var(--pr-sombra);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.pr-ia-flotante {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: min(380px, calc(100vw - 2rem));
+  max-height: min(560px, calc(100vh - 2rem));
+  z-index: 1050;
+  animation: pr-ia-aparecer .18s ease-out;
+}
+
+@keyframes pr-ia-aparecer {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pr-ia-boton-flotante {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 0;
+  background: linear-gradient(135deg, var(--pr-acento) 0%, #8B5CF6 100%);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: var(--pr-sombra-lg);
+  z-index: 1049;
+  cursor: pointer;
+  transition: transform var(--pr-transicion);
+}
+
+.pr-ia-boton-flotante:hover { transform: scale(1.06); }
+
+.pr-ia-cabecera { display: flex; align-items: center; gap: .6rem; }
+
+.pr-ia-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pr-acento) 0%, #8B5CF6 100%);
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+/* Indicador "En línea" del encabezado */
+.pr-ia-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--pr-pagado);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.pr-ia-punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pr-pagado);
+  box-shadow: 0 0 0 rgba(21, 128, 61, .5);
+  animation: pr-ia-latido 2s infinite;
+}
+
+@keyframes pr-ia-latido {
+  0%   { box-shadow: 0 0 0 0 rgba(21, 128, 61, .45); }
+  70%  { box-shadow: 0 0 0 6px rgba(21, 128, 61, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0); }
+}
+
+.pr-ia-conversacion {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  max-height: 320px;
+  padding-right: .25rem;
+}
+
+/* Cada turno de la conversación: avatar + burbuja, en fila */
+.pr-ia-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: .4rem;
+}
+
+.pr-ia-fila-usuario { justify-content: flex-end; }
+
+.pr-ia-avatar-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--pr-acento-suave);
+  color: var(--pr-acento);
+  font-size: .75rem;
+}
+
+.pr-ia-burbuja {
+  padding: .6rem .85rem;
+  border-radius: 1rem;
+  font-size: .875rem;
+  max-width: 82%;
+  line-height: 1.45;
+}
+
+.pr-ia-burbuja-ia {
+  background: var(--pr-superficie-2);
+  border: 1px solid var(--pr-borde);
+  border-bottom-left-radius: .3rem;
+}
+
+.pr-ia-burbuja-usuario {
+  background: var(--pr-acento);
+  color: #fff;
+  border-bottom-right-radius: .3rem;
+}
+
+/* Cada línea de una respuesta se separa como su propio párrafo, para que
+   una respuesta con varios datos se lea como una lista, no como un bloque. */
+.pr-ia-linea { margin: 0; }
+.pr-ia-linea + .pr-ia-linea { margin-top: .35rem; }
+
+/* Una línea que es solo una cifra ("$3.067.000") se resalta, para que las
+   respuestas con varios montos se puedan escanear de un vistazo. */
+.pr-ia-linea-cifra {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-ia-cargando {
+  display: flex;
+  gap: .3rem;
+  align-items: center;
+  padding: .65rem .9rem;
+}
+
+.pr-ia-cargando span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pr-texto-suave);
+  animation: pr-ia-parpadeo 1.1s infinite ease-in-out;
+}
+
+.pr-ia-cargando span:nth-child(2) { animation-delay: .15s; }
+.pr-ia-cargando span:nth-child(3) { animation-delay: .3s; }
+
+@keyframes pr-ia-parpadeo {
+  0%, 80%, 100% { opacity: .25; }
+  40%           { opacity: 1; }
+}
+
+.pr-ia-cargando-texto {
+  font-size: .8rem;
+  color: var(--pr-texto-suave);
+  font-style: italic;
+}
+
+.pr-ia-sugerencias { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* Chips de preguntas rápidas: más compactos que un botón normal */
+.pr-ia-chip {
+  border: 1px solid var(--pr-borde);
+  background: var(--pr-superficie-2);
+  color: var(--pr-texto);
+  border-radius: 999px;
+  padding: .3rem .7rem;
+  font-size: .78rem;
+  white-space: nowrap;
+  transition: background var(--pr-transicion), border-color var(--pr-transicion);
+}
+
+.pr-ia-chip:hover {
+  background: var(--pr-acento-suave);
+  border-color: var(--pr-acento);
+  color: var(--pr-acento);
+}
+
+.pr-ia-chip:disabled { opacity: .5; cursor: default; }
+
+.pr-ia-boton-resumen {
+  align-self: flex-start;
+  background: var(--pr-acento-suave);
+  color: var(--pr-acento);
+  border: 0;
+  border-radius: 999px;
+  padding: .4rem .9rem;
+  font-size: .8rem;
+  font-weight: 600;
+  transition: background var(--pr-transicion), color var(--pr-transicion);
+}
+
+.pr-ia-boton-resumen:hover { background: var(--pr-acento); color: #fff; }
+.pr-ia-boton-resumen:disabled { opacity: .6; cursor: default; }
+
+/* Barra de escritura: una sola píldora con el botón de enviar circular
+   adentro, como un chat moderno — no un input y un botón rectangular
+   sueltos. */
+.pr-ia-barra {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--pr-superficie-2);
+  border: 1px solid var(--pr-borde);
+  border-radius: 999px;
+  padding: .3rem .3rem .3rem 1rem;
+}
+
+.pr-ia-barra:focus-within {
+  border-color: var(--pr-acento);
+  box-shadow: 0 0 0 3px var(--pr-acento-suave);
+}
+
+.pr-ia-barra input {
+  flex-grow: 1;
+  border: 0;
+  background: transparent;
+  color: var(--pr-texto);
+  font-size: .875rem;
+  min-width: 0;
+}
+
+.pr-ia-barra input:focus { outline: none; }
+.pr-ia-barra input:disabled { opacity: .6; }
+
+.pr-ia-boton-enviar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0;
+  flex-shrink: 0;
+  background: var(--pr-acento);
+  color: #fff;
+  font-size: .9rem;
+  transition: background var(--pr-transicion), transform var(--pr-transicion);
+}
+
+.pr-ia-boton-enviar:hover { background: var(--pr-acento-fuerte); transform: scale(1.05); }
+.pr-ia-boton-enviar:disabled { opacity: .5; cursor: default; transform: none; }
+
+.pr-ia-aviso {
+  font-size: .72rem;
+  color: var(--pr-texto-suave);
+  margin: 0;
+}
+
+/* Nota de "Observaciones automáticas" en Insights: informativa, no una
+   tarjeta grande — el contenido de abajo es lo protagonista. */
+.pr-ia-nota-insights {
+  font-size: .8rem;
+  color: var(--pr-texto-suave);
+  padding: .5rem 0 .25rem;
+}
+
+.pr-ia-nota-insights strong { color: var(--pr-texto); }
+
+@media (max-width: 480px) {
+  .pr-ia-flotante {
+    right: .5rem;
+    left: .5rem;
+    bottom: .5rem;
+    width: auto;
+  }
+
+  .pr-ia-burbuja { max-width: 90%; }
+
+  .pr-ia-sugerencias {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: .2rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pr-ia-chip { flex-shrink: 0; }
 }
