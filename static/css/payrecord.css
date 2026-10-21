@@ -452,6 +452,34 @@ a.pr-tarjeta:hover,
 }
 
 
+/* --- Insignia de marca/categoría de una obligación --- */
+/* Mismo círculo tintado que ya usaban los iconos de categoría. El logo de
+   marca es el SVG incrustado directamente en el HTML (no <img src>, no
+   mask-image -- eso dependía de una función CSS que no se dibujó igual en
+   todos los navegadores) con fill="currentColor" en el propio SVG, así
+   que basta con heredar `color` para pintarlo del tono de marca en
+   cualquier tema. Si el archivo no se pudiera leer, el componente ya cae
+   a un icono de respaldo antes de llegar aquí (§ marcas). */
+.pr-badge-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pr-marca-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-marca-logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+
 /* --- Distintivos de estado --- */
 
 .pr-estado {

@@ -22,6 +22,13 @@ from apps.obligaciones.enums import EstadoObligacion
 
 UMBRAL_POR_DEFECTO = 7
 
+# Ventana móvil de "próximos pagos" (dashboard y "Mis obligaciones"): 30
+# días calendario exactos desde hoy, con ambos extremos incluidos. Se usa
+# un número fijo de días -- no "el mismo día del mes siguiente" -- para
+# que no cambie de ancho según la duración del mes (28 a 31 días) ni se
+# ambigüe en meses que no tienen el día de inicio (p. ej. el 31).
+DIAS_VENTANA_PROXIMOS = 30
+
 
 def calcular_estado(pagada, fecha_vencimiento, hoy=None, umbral_dias=UMBRAL_POR_DEFECTO):
     """Devuelve el estado de una obligación.
@@ -63,6 +70,11 @@ def dias_para_vencer(fecha_vencimiento, hoy=None):
     """Días que faltan. Negativo si la fecha ya pasó."""
     hoy = hoy or date.today()
     return (fecha_vencimiento - hoy).days
+
+
+def fin_de_ventana_proximos(hoy):
+    """Último día de la ventana móvil de 30 días que arranca hoy."""
+    return hoy + timedelta(days=DIAS_VENTANA_PROXIMOS)
 
 
 def fin_de_mes(fecha):

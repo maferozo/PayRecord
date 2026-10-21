@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from apps.obligaciones.enums import EstadoObligacion
 from apps.obligaciones.models import Obligacion
-from apps.obligaciones.services.estados import fin_de_mes
+from apps.obligaciones.services.estados import fin_de_mes, fin_de_ventana_proximos
 from apps.obligaciones.services.priorizacion import construir_contexto, priorizar
 
 
@@ -74,9 +74,18 @@ def resumen(usuario, hoy=None):
 
 
 def proximas_obligaciones(usuario, limite=6, hoy=None):
-    """Las que vencen antes, sin pagar, ordenadas por fecha (§11)."""
+    """Lo que vence dentro de los próximos 30 días, sin pagar, ordenado
+    por fecha (§11).
+
+    No incluye lo ya vencido a propósito: esa lista es para "qué viene",
+    y lo vencido ya tiene su propia tarjeta KPI bien visible ("Vencidas")
+    en el dashboard. `resumen()` (el total de "Dinero comprometido" y las
+    4 tarjetas KPI) no usa esta ventana -- sigue sumando todo, como pide
+    el encargo.
+    """
     hoy = hoy or timezone.localdate()
-    return list(_consulta_base(usuario, hoy).proximas()[:limite])
+    hasta = fin_de_ventana_proximos(hoy)
+    return list(_consulta_base(usuario, hoy).proximas().vence_entre(hoy, hasta)[:limite])
 
 
 def prioridades_del_dia(usuario, limite=5, hoy=None):
@@ -106,7 +115,7 @@ def gasto_por_categoria(usuario, hoy=None, limite=6):
 
     return list(
         _sin_periodos_futuros(_consulta_base(usuario, hoy).pendientes_de_pago(), hoy)
-        .values("categoria__nombre", "categoria__color", "categoria__icono")
+        .values("categoria", "categoria__nombre", "categoria__color", "categoria__icono")
         .annotate(total=Sum("monto"), cantidad=Count("id"))
         .order_by("-total")[:limite]
     )

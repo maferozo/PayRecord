@@ -72,6 +72,20 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onHover: (evento, elementos) => {
+            evento.native.target.style.cursor = elementos.length ? "pointer" : "default";
+          },
+          // Clic en una barra -> "Mis obligaciones" filtrado a ese mes:
+          // la gráfica deja de ser solo para mirar, también se usa.
+          onClick: (_evento, elementos) => {
+            if (!elementos.length) return;
+            const indice = elementos[0].index;
+            const desde = datos.comprometido.desde?.[indice];
+            const hasta = datos.comprometido.hasta?.[indice];
+            if (desde && hasta) {
+              window.location.href = `/obligaciones/?desde=${desde}&hasta=${hasta}`;
+            }
+          },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { label: (ctx) => pesos.format(ctx.parsed.y) } },

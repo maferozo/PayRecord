@@ -140,10 +140,7 @@
 
       {% for obligacion in proximas %}
         <div class="d-flex align-items-center gap-2 py-2 {% if not forloop.last %}border-bottom{% endif %}">
-          <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                style="width:34px; height:34px; background:{{ obligacion.categoria.color }}1A; color:{{ obligacion.categoria.color }};">
-            <i class="bi {{ obligacion.categoria.icono|default:'bi-tag' }}"></i>
-          </span>
+          {% badge_obligacion obligacion 34 %}
           <div class="flex-grow-1 min-w-0">
             <a href="{% url 'obligaciones:detalle' obligacion.pk %}"
                class="d-block text-decoration-none text-truncate small fw-semibold">
@@ -168,7 +165,9 @@
     <div class="pr-tarjeta p-4 h-100">
       <p class="pr-etiqueta mb-3">Comprometido por categoría</p>
       {% for fila in por_categoria %}
-        <div class="d-flex align-items-center gap-2 py-1">
+        <a href="{% url 'obligaciones:lista' %}?categoria={{ fila.categoria }}"
+           class="d-flex align-items-center gap-2 py-1 text-decoration-none text-body"
+           title="Ver obligaciones de {{ fila.categoria__nombre }}">
           <span class="rounded-circle flex-shrink-0"
                 style="width:10px; height:10px; background:{{ fila.categoria__color }};"></span>
           <span class="flex-grow-1 small text-truncate">{{ fila.categoria__nombre }}</span>
@@ -176,7 +175,7 @@
           <span class="small fw-semibold" style="font-variant-numeric: tabular-nums;">
             {{ fila.total|moneda_cop }}
           </span>
-        </div>
+        </a>
       {% empty %}
         <p class="text-secondary small mb-0">Sin datos todavía.</p>
       {% endfor %}

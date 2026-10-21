@@ -67,6 +67,10 @@ def inicio(request):
             # solo estética, ayuda a distinguir "esto ya es real" de "esto
             # es lo que generaron las obligaciones mensuales por adelantado".
             "mes_actual": [fila["es_mes_actual"] for fila in comprometido_mensual],
+            # Para poder llevar a "Mis obligaciones" filtrado al mes de la
+            # barra en la que se hace clic (ver dashboard.js).
+            "desde": [fila["desde"] for fila in comprometido_mensual],
+            "hasta": [fila["hasta"] for fila in comprometido_mensual],
         },
         "grafico_estado_dashboard": {
             "cantidades": [

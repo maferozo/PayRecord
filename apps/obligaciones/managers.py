@@ -109,6 +109,16 @@ class ObligacionQuerySet(models.QuerySet):
         """Sin pagar, ordenadas por la fecha más cercana."""
         return self.pendientes_de_pago().order_by("fecha_vencimiento", "-monto")
 
+    def vence_entre(self, desde, hasta):
+        """Vencimiento dentro de [desde, hasta], ambos incluidos."""
+        return self.filter(fecha_vencimiento__gte=desde, fecha_vencimiento__lte=hasta)
+
+    def vence_hasta(self, hasta):
+        """Vencimiento en `hasta` o antes -- sin límite inferior, así que
+        también incluye lo ya vencido (a propósito: ver
+        ObligacionListView.get_queryset)."""
+        return self.filter(fecha_vencimiento__lte=hasta)
+
     def buscar(self, texto):
         if not texto:
             return self

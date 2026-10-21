@@ -1,0 +1,15 @@
+{% comment %}
+Círculo con el logo de marca o el icono de categoría de una obligación.
+Se usa con {% badge_obligacion obligacion tamano=44 %} -- ver
+apps/obligaciones/templatetags/obligaciones_extras.py.
+{% endcomment %}
+<span class="pr-badge-marca"
+      style="width:{{ tamano }}px; height:{{ tamano }}px; background:{{ color }}1A;"
+      title="{{ nombre_accesible }}" role="img" aria-label="{{ nombre_accesible }}">
+  {% if tipo == "svg" %}
+    <span class="pr-marca-logo" style="color:{{ color }}; width:{{ tamano_icono }}px; height:{{ tamano_icono }}px;">{{ svg_contenido }}</span>
+  {% else %}
+    <i class="bi {{ clase_icono }}" style="color:{{ color }}; font-size:{{ tamano_icono }}px;"
+       aria-hidden="true"></i>
+  {% endif %}
+</span>

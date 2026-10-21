@@ -116,6 +116,7 @@ class ObligacionForm(forms.ModelForm):
             "concepto",
             "monto",
             "fecha_vencimiento",
+            "marca",
             "frecuencia",
             "fecha_fin",
             "categoria",
@@ -159,12 +160,31 @@ class ObligacionForm(forms.ModelForm):
         help_text="Recibirás una notificación dentro de PAYRECORD.",
     )
 
+    # Única pregunta de selección manual que queda (streaming y EPM se
+    # reconocen solos del concepto -- ver services/marcas.py). El campo
+    # existe siempre en el formulario, pero el JS de la plantilla
+    # (templates/obligaciones/obligacion_form.html) solo lo muestra cuando el
+    # concepto habla de celular o internet.
+    marca = forms.ChoiceField(
+        label="¿Qué operador tienes?",
+        required=False,
+        help_text="Elige tu proveedor para mostrar su logo.",
+        widget=forms.Select(attrs={"id": "id_operador"}),
+    )
+
     def __init__(self, *args, usuario=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
 
         self.fields["categoria"].queryset = Categoria.objects.disponibles_para(usuario)
         self.fields["categoria"].empty_label = "Elige una categoría"
+
+        from .services.marcas import opciones_operador
+
+        self.fields["marca"].choices = [
+            ("", "Selecciona tu operador"),
+            *opciones_operador(),
+        ]
 
         # Los campos empresariales solo aplican a ese tipo de cuenta (§7).
         if not usuario.es_empresa:

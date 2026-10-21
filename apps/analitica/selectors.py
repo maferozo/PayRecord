@@ -185,6 +185,10 @@ def comprometido_por_mes(usuario, meses_adelante=4, hoy=None):
             "etiqueta": f"{MESES_CORTOS[mes - 1]} {anio}",
             "total": datos.get(clave, Decimal("0")),
             "es_mes_actual": desplazamiento == 0,
+            # Límites del mes, para poder filtrar "Mis obligaciones" al
+            # hacer clic en la barra correspondiente del dashboard.
+            "desde": clave.isoformat(),
+            "hasta": fin_de_mes(clave).isoformat(),
         })
     return serie
 

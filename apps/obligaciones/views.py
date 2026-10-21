@@ -21,6 +21,7 @@ from .enums import EstadoObligacion
 from .forms import CategoriaForm, FiltroObligacionesForm, ObligacionForm
 from .models import Categoria, Obligacion
 from .services import proveedores
+from .services.estados import fin_de_ventana_proximos
 
 
 # ===========================================================
@@ -129,17 +130,33 @@ class ObligacionQuerysetMixin(LoginRequiredMixin):
 
 
 class ObligacionListView(ObligacionQuerysetMixin, ListView):
-    """Mis obligaciones, con filtros (§17)."""
+    """Mis obligaciones, con filtros (§17).
+
+    Por defecto (sin ningún filtro) la lista se acota a una ventana móvil
+    de 30 días: pendientes con vencimiento entre hoy y hoy+30, más
+    cualquier cosa ya vencida sin pagar (por vieja que sea, nunca se
+    oculta sola por eso -- solo las pagadas quedan fuera por defecto,
+    accesibles con el filtro de estado). En cuanto el usuario toca
+    cualquier filtro -- o pide "Ver todas" explícitamente -- la ventana
+    se desactiva por completo: nunca le pisa silenciosamente un filtro
+    de fecha propio.
+    """
 
     template_name = "obligaciones/obligacion_lista.html"
     context_object_name = "obligaciones"
     paginate_by = 20
+
+    _CAMPOS_FILTRO = ("q", "estado", "categoria", "prioridad", "desde", "hasta")
 
     def get_queryset(self):
         consulta = super().get_queryset()
         self.filtros = FiltroObligacionesForm(
             self.request.GET or None, usuario=self.request.user
         )
+
+        tiene_filtros = any(self.request.GET.get(campo) for campo in self._CAMPOS_FILTRO)
+        self.ver_todas = self.request.GET.get("ventana") == "todas"
+        self.ventana_activa = not tiene_filtros and not self.ver_todas
 
         if self.filtros.is_valid():
             datos = self.filtros.cleaned_data
@@ -156,13 +173,19 @@ class ObligacionListView(ObligacionQuerysetMixin, ListView):
             if datos.get("hasta"):
                 consulta = consulta.filter(fecha_vencimiento__lte=datos["hasta"])
 
+        if self.ventana_activa:
+            hasta_ventana = fin_de_ventana_proximos(timezone.localdate())
+            consulta = consulta.filter(pagada=False).vence_hasta(hasta_ventana)
+
         return consulta.order_by("pagada", "fecha_vencimiento", "-monto")
 
     def get_context_data(self, **kwargs):
         contexto = super().get_context_data(**kwargs)
         contexto["filtros"] = self.filtros
+        contexto["ventana_activa"] = self.ventana_activa
 
-        # Totales del conjunto filtrado, no solo de la página visible.
+        # Totales del conjunto filtrado (incluida la ventana si está
+        # activa), no solo de la página visible.
         consulta = self.get_queryset()
         contexto["total_pendiente"] = (
             consulta.pendientes_de_pago().aggregate(t=Sum("monto"))["t"] or 0

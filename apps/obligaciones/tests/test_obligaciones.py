@@ -374,3 +374,204 @@ class FiltrosListadoTests(BaseObligaciones):
         self.futura.marcar_pagada()
         respuesta = self.client.get(reverse("obligaciones:lista"))
         self.assertEqual(respuesta.context["total_pendiente"], Decimal("900000.00"))
+
+
+class SeleccionManualDeMarcaTests(BaseObligaciones):
+    """§D del encargo: elegir la marca a mano desde el formulario, y que
+    quede guardada de forma consistente (la clave, no el texto)."""
+
+    def setUp(self):
+        self.usuario = crear_personal()
+        self.client.force_login(self.usuario)
+
+    def test_elegir_claro_desde_el_selector_lo_guarda(self):
+        """"Claro" no se autodetecta del texto (es ambiguo): la única
+        forma de asignarlo es este selector."""
+        self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Plan celular", marca="claro"),
+        )
+
+        obligacion = Obligacion.objects.get(concepto="Plan celular")
+        self.assertEqual(obligacion.marca, "claro")
+
+    def test_dejar_en_automatico_no_guarda_nada_en_el_campo(self):
+        self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Spotify Premium"),  # sin "marca"
+        )
+
+        obligacion = Obligacion.objects.get(concepto="Spotify Premium")
+        self.assertEqual(obligacion.marca, "")
+
+    def test_no_es_obligatorio_elegir_proveedor(self):
+        """Un texto que ni se autodetecta ni se elige a mano no debe
+        impedir guardar la obligación."""
+        respuesta = self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Cuota administración"),
+        )
+        self.assertEqual(Obligacion.objects.filter(concepto="Cuota administración").count(), 1)
+        self.assertEqual(respuesta.status_code, 302)
+
+    def test_una_clave_que_no_existe_en_el_registro_es_invalida(self):
+        """El campo es un ChoiceField contra el registro real: no se puede
+        guardar cualquier texto arbitrario (eso es justo "depender del
+        texto visible", lo que se pidió evitar)."""
+        formulario = self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Algo", marca="marca-inventada"),
+        )
+        self.assertEqual(formulario.status_code, 200)  # se queda en el formulario
+        self.assertFalse(Obligacion.objects.filter(concepto="Algo").exists())
+
+    def test_editar_conserva_la_marca_elegida(self):
+        self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Internet hogar", marca="movistar"),
+        )
+        obligacion = Obligacion.objects.get(concepto="Internet hogar")
+
+        self.client.post(
+            reverse("obligaciones:editar", args=[obligacion.pk]),
+            self.datos_validos(concepto="Internet hogar", marca="movistar", descripcion="actualizado"),
+        )
+
+        obligacion.refresh_from_db()
+        self.assertEqual(obligacion.marca, "movistar")
+        self.assertEqual(obligacion.descripcion, "actualizado")
+
+    def test_la_eleccion_manual_gana_sobre_la_deteccion_automatica(self):
+        """Un concepto que diría "internet" por el texto, pero con un
+        operador elegido a mano -- esa elección manda sobre lo que el
+        texto hubiera sugerido."""
+        from apps.obligaciones.templatetags.obligaciones_extras import badge_obligacion
+
+        self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Internet del hogar", marca="movistar"),
+        )
+        obligacion = Obligacion.objects.get(concepto="Internet del hogar")
+
+        contexto = badge_obligacion(obligacion)
+
+        self.assertEqual(contexto["nombre_accesible"], "Movistar")
+
+    def test_una_clave_fuera_de_las_5_opciones_de_operador_es_invalida(self):
+        """El campo ya no acepta cualquier clave del registro (p. ej.
+        "netflix"): desde el encargo final, solo los 5 operadores de
+        celular/internet se eligen a mano vía formulario."""
+        respuesta = self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Algo", marca="netflix"),
+        )
+        self.assertEqual(respuesta.status_code, 200)  # se queda en el formulario
+        self.assertFalse(Obligacion.objects.filter(concepto="Algo").exists())
+
+
+class BadgeDeObligacionEnLasVistasTests(BaseObligaciones):
+    """El logo aparece en las 3 pantallas pedidas explícitamente."""
+
+    def setUp(self):
+        self.usuario = crear_personal()
+        self.client.force_login(self.usuario)
+        self.obligacion = Obligacion.objects.create(
+            usuario=self.usuario, concepto="Spotify", monto=Decimal("20000"),
+            fecha_vencimiento=timezone.localdate() + timedelta(days=5),
+            categoria=self.categoria,
+        )
+
+    def test_aparece_en_la_lista(self):
+        respuesta = self.client.get(reverse("obligaciones:lista"))
+        self.assertContains(respuesta, 'title="Spotify"')
+        self.assertContains(respuesta, "<svg")  # el logo real, no el icono de respaldo
+
+    def test_aparece_en_el_detalle(self):
+        respuesta = self.client.get(reverse("obligaciones:detalle", args=[self.obligacion.pk]))
+        self.assertContains(respuesta, 'title="Spotify"')
+
+    def test_aparece_en_el_dashboard(self):
+        respuesta = self.client.get(reverse("dashboard:inicio"))
+        self.assertContains(respuesta, 'title="Spotify"')
+
+    def test_una_obligacion_sin_marca_reconocida_usa_el_icono_de_categoria(self):
+        Obligacion.objects.create(
+            usuario=self.usuario, concepto="Universidad", monto=Decimal("500000"),
+            fecha_vencimiento=timezone.localdate() + timedelta(days=5),
+            categoria=self.categoria,
+        )
+        respuesta = self.client.get(reverse("obligaciones:lista"))
+        self.assertContains(respuesta, f'title="{self.categoria.nombre}"')
+
+
+class EpmAutomaticoTests(BaseObligaciones):
+    """Encargo final §1: EPM se reconoce solo, sin preguntar nada."""
+
+    def setUp(self):
+        self.usuario = crear_personal()
+        self.client.force_login(self.usuario)
+
+    def test_registrar_servicios_del_hogar_muestra_epm_sin_preguntar(self):
+        respuesta = self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Pagar servicios del hogar"),
+        )
+        self.assertEqual(respuesta.status_code, 302)  # no se quedó esperando un campo extra
+
+        obligacion = Obligacion.objects.get(concepto="Pagar servicios del hogar")
+        self.assertEqual(obligacion.marca, "")  # nada guardado a mano: fue automático
+
+        lista = self.client.get(reverse("obligaciones:lista"))
+        self.assertContains(lista, 'title="EPM"')
+
+    def test_un_servicio_del_hogar_no_cubierto_usa_icono_generico(self):
+        """"Gas natural" ya no es EPM (se simplificó el selector): debe
+        caer al icono de categoría, no asignarse una marca incorrecta."""
+        self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Gas natural"),
+        )
+        obligacion = Obligacion.objects.get(concepto="Gas natural")
+
+        respuesta = self.client.get(reverse("obligaciones:lista"))
+        self.assertNotContains(respuesta, 'title="EPM"')
+        self.assertContains(respuesta, f'title="{obligacion.categoria.nombre}"')
+
+
+class PreguntaDeOperadorEnElFormularioTests(BaseObligaciones):
+    """Encargo final §2: la estructura HTML que el JS de la plantilla usa
+    para mostrar/ocultar la pregunta -- lo que el JS hace en el navegador
+    (mostrar/ocultar según lo que se escriba) se verificó manualmente en
+    vivo, Django no ejecuta JavaScript en estas pruebas."""
+
+    def setUp(self):
+        self.usuario = crear_personal()
+        self.client.force_login(self.usuario)
+
+    def test_el_grupo_de_operador_existe_y_empieza_oculto(self):
+        respuesta = self.client.get(reverse("obligaciones:crear"))
+        self.assertContains(respuesta, 'id="grupo-operador"')
+        self.assertContains(respuesta, 'id="id_operador"')
+        # El atributo "hidden" debe estar en el HTML inicial -- el JS lo
+        # quita si corresponde, pero el estado de reposo es oculto.
+        html = respuesta.content.decode()
+        indice = html.find('id="grupo-operador"')
+        self.assertIn("hidden", html[max(0, indice - 20):indice + 120])
+
+    def test_las_opciones_del_select_son_las_5_del_operador(self):
+        respuesta = self.client.get(reverse("obligaciones:crear"))
+        for nombre in ("Claro", "Movistar", "Tigo", "WOM", "Otro proveedor"):
+            with self.subTest(nombre=nombre):
+                self.assertContains(respuesta, f">{nombre}<")
+        self.assertNotContains(respuesta, ">ETB<")
+
+    def test_elegir_un_operador_sin_relacion_con_el_texto_igual_se_guarda(self):
+        """El JS decide cuándo mostrar la pregunta, pero el valor que
+        llegue al backend se guarda igual -- la validación no depende de
+        si el texto "parece" de celular."""
+        self.client.post(
+            reverse("obligaciones:crear"),
+            self.datos_validos(concepto="Mi plan de datos", marca="tigo"),
+        )
+        obligacion = Obligacion.objects.get(concepto="Mi plan de datos")
+        self.assertEqual(obligacion.marca, "tigo")

@@ -16,13 +16,16 @@
     <div class="pr-tarjeta p-4">
 
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-        <div>
-          <span class="pr-estado {{ obligacion.estado_actual|clase_estado }} mb-2">
-            <i class="bi {{ obligacion.estado_actual|icono_estado }}"></i>
-            {{ obligacion.estado_actual|etiqueta_estado }}
-          </span>
-          <h1 class="h4 mb-1">{{ obligacion.concepto }}</h1>
-          <p class="text-secondary mb-0">{{ obligacion.categoria.nombre }}</p>
+        <div class="d-flex align-items-start gap-3">
+          {% badge_obligacion obligacion 48 %}
+          <div>
+            <span class="pr-estado {{ obligacion.estado_actual|clase_estado }} mb-2">
+              <i class="bi {{ obligacion.estado_actual|icono_estado }}"></i>
+              {{ obligacion.estado_actual|etiqueta_estado }}
+            </span>
+            <h1 class="h4 mb-1">{{ obligacion.concepto }}</h1>
+            <p class="text-secondary mb-0">{{ obligacion.categoria.nombre }}</p>
+          </div>
         </div>
         <div class="text-end">
           <p class="pr-cifra mb-0">{{ obligacion.monto|moneda_cop }}</p>

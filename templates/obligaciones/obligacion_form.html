@@ -23,6 +23,10 @@
 
         {{ form.concepto|as_crispy_field }}
 
+        <div id="grupo-operador" class="pr-superficie-suave p-3 mb-3" hidden>
+          {{ form.marca|as_crispy_field }}
+        </div>
+
         <div class="row">
           <div class="col-12 col-sm-6">{{ form.monto|as_crispy_field }}</div>
           <div class="col-12 col-sm-6">{{ form.fecha_vencimiento|as_crispy_field }}</div>
@@ -113,6 +117,27 @@
     radios.forEach(function (radio) {
       radio.addEventListener('change', actualizar);
     });
+    actualizar();
+  })();
+
+  // Pregunta "¿Qué operador tienes?" solo para obligaciones de celular o
+  // internet -- el resto (streaming, EPM...) se reconoce solo del texto,
+  // sin preguntar nada (ver apps/obligaciones/services/marcas.py).
+  (function () {
+    var concepto = document.getElementById('id_concepto');
+    var grupoOperador = document.getElementById('grupo-operador');
+    var operador = document.getElementById('id_operador');
+    if (!concepto || !grupoOperador) return;
+
+    var PATRON_TELECOM = /plan\s*de\s*datos|plan\s*celular|tel[eé]fono\s*m[oó]vil|\binternet\b/i;
+
+    function actualizar() {
+      var esTelecom = PATRON_TELECOM.test(concepto.value);
+      var yaTieneOperador = operador && operador.value;
+      grupoOperador.hidden = !(esTelecom || yaTieneOperador);
+    }
+
+    concepto.addEventListener('input', actualizar);
     actualizar();
   })();
 </script>

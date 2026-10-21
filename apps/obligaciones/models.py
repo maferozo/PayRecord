@@ -113,6 +113,22 @@ class Obligacion(ModeloBase):
     )
     fecha_vencimiento = models.DateField("Fecha de vencimiento")
 
+    # --- Reconocimiento de marca/proveedor (§ marcas) ---
+    # Guarda la clave estable del registro de marcas (p. ej. "spotify",
+    # "claro"), no el nombre visible: así no depende únicamente del texto
+    # de `concepto`, que el usuario puede cambiar sin querer "perder" el
+    # logo. Vacío (el valor por defecto) significa "reconocer automático a
+    # partir del concepto" -- lo que ya pasaba antes de que este campo
+    # existiera, así que no cambia nada para las obligaciones existentes.
+    marca = models.CharField(
+        "Marca o proveedor",
+        max_length=30,
+        blank=True,
+        help_text="Vacío reconoce la marca automáticamente a partir del "
+                  "concepto. Elígela a mano si el nombre es ambiguo o si "
+                  "el proveedor no tiene un logo reconocible por el texto.",
+    )
+
     # --- Recurrencia mensual ---
     frecuencia = models.CharField(
         "Frecuencia de pago",
