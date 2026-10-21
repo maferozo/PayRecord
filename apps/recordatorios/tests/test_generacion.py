@@ -231,21 +231,21 @@ class EnvioTests(BaseRecordatorios):
 
         self.assertIn("está vencida", Notificacion.objects.first().titulo)
 
-    def test_un_canal_no_implementado_deja_el_recordatorio_en_error(self):
-        obligacion = self.crear_obligacion()
-        ConfiguracionRecordatorio.objects.create(
-            obligacion=obligacion, dias_antes=7, canal=CanalNotificacion.EMAIL
-        )
-        generar(hoy=HOY)
+    def test_un_canal_no_registrado_deja_el_recordatorio_en_error(self):
+        """APP y EMAIL ya están implementados; esto prueba el camino de
+        error para un canal que ni siquiera existe en el registro, sin
+        tocar la base de datos (un valor así nunca pasaría `clean()`,
+        pero el generador no debe asumirlo)."""
+        from apps.recordatorios.services.canales import CanalNoDisponible, obtener_canal
 
-        enviados, errores = enviar_pendientes(hoy=HOY)
-
-        self.assertEqual((enviados, errores), (0, 1))
-        recordatorio = Recordatorio.objects.get()
-        self.assertEqual(recordatorio.estado, EstadoRecordatorio.ERROR)
-        self.assertIn("fase 7b", recordatorio.detalle_error)
+        with self.assertRaises(CanalNoDisponible):
+            obtener_canal("FAX")
 
     def test_un_canal_en_error_no_bloquea_a_los_demas(self):
+        """El canal de correo falla (el proveedor rechaza el envío) sin
+        impedir que el recordatorio de la app, en paralelo, se entregue."""
+        from unittest.mock import patch
+
         buena = self.crear_obligacion(concepto="Con app")
         self.crear_regla(buena, 7)
 
@@ -255,9 +255,16 @@ class EnvioTests(BaseRecordatorios):
         )
 
         generar(hoy=HOY)
-        enviados, errores = enviar_pendientes(hoy=HOY)
+        with patch(
+            "apps.recordatorios.services.canales.send_mail",
+            side_effect=Exception("Proveedor no disponible"),
+        ):
+            enviados, errores = enviar_pendientes(hoy=HOY)
 
         self.assertEqual((enviados, errores), (1, 1))
+        fallido = Recordatorio.objects.get(obligacion=mala)
+        self.assertEqual(fallido.estado, EstadoRecordatorio.ERROR)
+        self.assertIn("Proveedor no disponible", fallido.detalle_error)
 
 
 class CancelacionTests(BaseRecordatorios):

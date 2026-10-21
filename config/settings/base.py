@@ -189,15 +189,41 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 
-# --- Correo (§6 recuperación de contraseña) ---
+# --- Correo (§6 recuperación de contraseña, §14 recordatorios por correo) ---
+#
+# En local, por defecto se usa el backend de consola (el correo se imprime
+# en la terminal, no se envía de verdad): no requiere credenciales para
+# desarrollar. Para enviar correos reales — en local o en producción — hay
+# que poner EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend en el
+# .env (o en la configuración de la app en Azure) junto con EMAIL_HOST,
+# EMAIL_HOST_USER y EMAIL_HOST_PASSWORD. Con Gmail: EMAIL_HOST=smtp.gmail.com,
+# EMAIL_PORT=587, EMAIL_USE_TLS=True, y una "contraseña de aplicación" (no la
+# contraseña normal de la cuenta) como EMAIL_HOST_PASSWORD.
 
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-responder@payrecord.local")
+
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=25)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_TIMEOUT = 15
 
 
 # --- Reglas de negocio de PAYRECORD ---
 
 DIAS_PROXIMO_VENCIMIENTO_DEFAULT = env.int("DIAS_PROXIMO_VENCIMIENTO_DEFAULT", default=7)
+
+
+# --- Tarea diaria (periodos mensuales + recordatorios) en producción ---
+# El plan gratuito de Azure App Service no admite WebJobs (ver
+# docs/despliegue-azure.md, §10). notificaciones:tarea_diaria es el endpoint
+# que llama un workflow programado de GitHub Actions una vez al día; este
+# token es lo único que lo protege, así que debe ser largo y distinto en
+# cada entorno. Vacío (el valor por defecto) desactiva el endpoint.
+TAREA_DIARIA_TOKEN = env("TAREA_DIARIA_TOKEN", default="")
 
 
 # --- Asistente IA: PayRecord AI (usa la API gratuita de Gemini) ---

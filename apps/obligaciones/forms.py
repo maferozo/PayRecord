@@ -289,6 +289,7 @@ class ObligacionForm(forms.ModelForm):
         return normalizar(self.cleaned_data.get("proveedor"), self.usuario)
 
     def save(self, commit=True):
+        from apps.recordatorios.enums import CanalNotificacion
         from apps.recordatorios.services.generacion import aplicar_reglas
 
         obligacion = super().save(commit=False)
@@ -298,7 +299,18 @@ class ObligacionForm(forms.ModelForm):
 
         if commit:
             obligacion.save()
-            aplicar_reglas(obligacion, self.cleaned_data.get("recordatorios") or [])
+            dias = self.cleaned_data.get("recordatorios") or []
+            aplicar_reglas(obligacion, dias, canal=CanalNotificacion.APP)
+
+            # El correo es por canal aparte: solo se crean sus reglas si el
+            # usuario activó "Notificaciones por correo" en su perfil (ver
+            # apps/usuarios — Configuración). Si está apagado, se limpian
+            # las reglas de correo que pudieran existir de antes (por si la
+            # apagó después de haber guardado esta misma obligación).
+            configuracion = getattr(self.usuario, "configuracion", None)
+            dias_email = dias if (configuracion and configuracion.notificaciones_email) else []
+            aplicar_reglas(obligacion, dias_email, canal=CanalNotificacion.EMAIL)
+
             # Al cambiar la fecha, los avisos de la fecha anterior dejan de valer.
             from apps.recordatorios.services.generacion import sincronizar
 

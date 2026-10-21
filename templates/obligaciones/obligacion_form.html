@@ -67,6 +67,18 @@
             <i class="bi bi-bell me-1"></i>Recordatorios
           </p>
           {{ form.recordatorios|as_crispy_field }}
+          {% if request.user.configuracion.notificaciones_email %}
+            <p class="text-secondary small mb-0">
+              <i class="bi bi-envelope-check me-1"></i>
+              También te llegarán por correo a {{ request.user.email }}.
+            </p>
+          {% else %}
+            <p class="text-secondary small mb-0">
+              <i class="bi bi-envelope me-1"></i>
+              Por ahora solo avisan dentro de la aplicación. Actívalo por
+              correo en <a href="{% url 'usuarios:perfil' %}">tu perfil</a>.
+            </p>
+          {% endif %}
         </div>
 
         {{ form.descripcion|as_crispy_field }}

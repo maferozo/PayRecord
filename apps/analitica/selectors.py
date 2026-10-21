@@ -142,7 +142,10 @@ def evolucion_mensual(usuario, meses=6, hoy=None):
         fila = datos.get(clave, {})
 
         serie.append({
-            "etiqueta": f"{MESES_CORTOS[mes - 1]} {str(anio)[2:]}",
+            # Año completo (no los 2 últimos dígitos): "nov 26" se puede
+            # confundir con un día del mes, sobre todo en el tooltip de la
+            # gráfica, que no tiene ninguna otra pista de qué es ese número.
+            "etiqueta": f"{MESES_CORTOS[mes - 1]} {anio}",
             "pagado": fila.get("pagado", Decimal("0")),
             "sin_pagar": fila.get("sin_pagar", Decimal("0")),
         })
@@ -179,7 +182,7 @@ def comprometido_por_mes(usuario, meses_adelante=4, hoy=None):
         clave = timezone.datetime(anio, mes, 1).date()
 
         serie.append({
-            "etiqueta": f"{MESES_CORTOS[mes - 1]} {str(anio)[2:]}",
+            "etiqueta": f"{MESES_CORTOS[mes - 1]} {anio}",
             "total": datos.get(clave, Decimal("0")),
             "es_mes_actual": desplazamiento == 0,
         })

@@ -156,8 +156,14 @@ App Service → `payrecord-app` → **Configuración** → **Variables de entorn
 | `DB_HOST` | `payrecord-mysql.mysql.database.azure.com` |
 | `DB_PORT` | `3306` |
 | `DB_SSL` | `True` |
-| `EMAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` |
+| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` (con `console...` los correos nunca salen de verdad, ver §10) |
+| `EMAIL_HOST` | El servidor SMTP, p. ej. `smtp.gmail.com` |
+| `EMAIL_PORT` | `587` |
+| `EMAIL_HOST_USER` | La cuenta de correo que envía |
+| `EMAIL_HOST_PASSWORD` | Su contraseña de aplicación (no la contraseña normal de la cuenta) |
+| `EMAIL_USE_TLS` | `True` |
 | `DEFAULT_FROM_EMAIL` | `no-responder@payrecord.local` |
+| `TAREA_DIARIA_TOKEN` | Una cadena larga y aleatoria — ver §10 |
 | `DIAS_PROXIMO_VENCIMIENTO_DEFAULT` | `7` |
 | `SCM_DO_BUILD_DURING_DEPLOYMENT` | `true` |
 
@@ -243,16 +249,45 @@ la base de datos de una vez.
 
 ## 10. Los recordatorios en Azure
 
-El plan gratuito **no ejecuta tareas programadas**: los WebJobs necesitan un
-plan de pago.
+El plan gratuito **no ejecuta tareas programadas propias de Azure**: los
+WebJobs necesitan un plan de pago (B1 o superior), y este despliegue usa F1.
 
-No es un problema: PAYRECORD recupera los recordatorios atrasados al abrir el
-dashboard, una vez al día por sesión. Mientras alguien entre a la aplicación,
-los avisos se generan.
+Hay dos mecanismos, uno encima del otro:
 
-Si más adelante hiciera falta la ejecución garantizada, las opciones son subir
-al plan B1 y usar un WebJob, o crear una Azure Function con temporizador que
-llame al comando.
+**1. Recuperación al abrir la app (ya existe, sin configurar nada).**
+PAYRECORD genera los periodos mensuales y los recordatorios atrasados cada
+vez que alguien abre el dashboard, una vez al día por sesión. Mientras
+alguien entre a la aplicación, los avisos se generan y se envían.
+
+**2. Tarea diaria sin costo, vía GitHub Actions (recomendada para que
+funcione aunque nadie abra la app ese día).**
+El repositorio ya trae un workflow programado,
+[`.github/workflows/tarea-diaria.yml`](../.github/workflows/tarea-diaria.yml),
+que llama una vez al día (8:00 a.m. hora de Bogotá) a un endpoint protegido
+de PAYRECORD: `POST /notificaciones/tarea-diaria/`. GitHub Actions es
+gratuito para este uso y no requiere subir de plan en Azure.
+
+Para activarla:
+
+1. En Azure, poner la variable de entorno `TAREA_DIARIA_TOKEN` con una
+   cadena larga y aleatoria (§6). Mientras esté vacía, el endpoint responde
+   503 y no hace nada — es la forma de tenerlo "apagado" a propósito.
+2. En GitHub: `Settings` → `Secrets and variables` → `Actions` →
+   `New repository secret`, y crear dos:
+   - `TAREA_DIARIA_URL` = `https://<tu-app>.azurewebsites.net/notificaciones/tarea-diaria/`
+   - `TAREA_DIARIA_TOKEN` = el mismo valor que se puso en Azure
+3. Para comprobar que funciona sin esperar al cron: pestaña **Actions** del
+   repositorio → **Tarea diaria de PayRecord** → **Run workflow**. El
+   resultado (periodos creados, recordatorios creados/enviados/con error)
+   queda en el log de ese run.
+
+Es seguro que se ejecute más de una vez el mismo día (por ejemplo, si se
+dispara a mano además del cron): tanto la generación de periodos como la de
+recordatorios son idempotentes, no duplican nada.
+
+Si más adelante hiciera falta algo más robusto (reintentos gestionados,
+monitoreo, ejecución garantizada por SLA), las opciones son subir al plan B1
+de Azure y usar un WebJob, o una Azure Function con temporizador.
 
 ---
 

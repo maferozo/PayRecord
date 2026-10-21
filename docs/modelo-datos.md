@@ -68,7 +68,7 @@ de modo que también la reciben los usuarios creados con `createsuperuser`.
 | `dias_proximo_vencimiento` | SMALLINT | Umbral de «próxima a vencer». Por defecto 7 |
 | `dias_recordatorio_default` | JSON | Días propuestos al crear una obligación |
 | `notificaciones_app` | BOOLEAN | |
-| `notificaciones_email` | BOOLEAN | Reservado para la fase 7b |
+| `notificaciones_email` | BOOLEAN | Activa el envío real por correo (§14b). Por defecto `False` |
 
 Se separa del usuario para no engordar la tabla de autenticación y porque
 estas preferencias crecerán cuando se implemente §20.

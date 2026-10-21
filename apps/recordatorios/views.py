@@ -1,11 +1,20 @@
+import hmac
+import logging
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
 from .models import Notificacion, Recordatorio
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class BandejaView(LoginRequiredMixin, ListView):
@@ -57,6 +66,54 @@ def marcar_todas_leidas(request):
     if actualizadas:
         messages.success(request, f"{actualizadas} notificación(es) marcadas como leídas.")
     return redirect("recordatorios:bandeja")
+
+
+@csrf_exempt
+@require_POST
+def ejecutar_tarea_diaria(request):
+    """Reemplazo sin costo de un WebJob (§15, §16).
+
+    El plan de Azure App Service de este despliegue es el gratuito (F1), que
+    no admite WebJobs ni ninguna tarea programada propia de Azure (ver
+    docs/despliegue-azure.md, §10). Este endpoint es a lo que llama, una vez
+    al día, el workflow programado de GitHub Actions
+    (.github/workflows/tarea-diaria.yml) — gratis y ya disponible porque el
+    código ya vive en GitHub.
+
+    No usa `@login_required`: quien llama es un proceso externo, no una
+    persona con sesión. En su lugar exige el token compartido, para que no
+    cualquiera en internet pueda dispararlo a voluntad (el plan gratuito
+    tiene una cuota de CPU limitada por día).
+
+    Procesa a todos los usuarios -- no hay "usuario actual" en una llamada
+    así --, y es seguro ejecutarlo más de una vez el mismo día: tanto la
+    generación de periodos como la de recordatorios son idempotentes.
+    """
+    token_esperado = settings.TAREA_DIARIA_TOKEN
+    if not token_esperado:
+        return JsonResponse(
+            {"error": "TAREA_DIARIA_TOKEN no está configurado en este entorno."},
+            status=503,
+        )
+
+    token_recibido = request.headers.get("X-Tarea-Token", "")
+    if not hmac.compare_digest(token_recibido, token_esperado):
+        _LOGGER.warning("Intento de ejecutar la tarea diaria con un token inválido.")
+        return JsonResponse({"error": "Token inválido."}, status=403)
+
+    from apps.obligaciones.services.recurrencia import generar as generar_periodos
+    from apps.recordatorios.services.generacion import procesar
+
+    periodos_creados = generar_periodos()
+    resultado = procesar()
+
+    _LOGGER.info(
+        "Tarea diaria ejecutada: %s periodo(s), %s recordatorio(s) creados, "
+        "%s enviados, %s con error.",
+        periodos_creados, resultado["creados"], resultado["enviados"], resultado["errores"],
+    )
+
+    return JsonResponse({"periodos_creados": periodos_creados, **resultado})
 
 
 class ProgramadosView(LoginRequiredMixin, ListView):

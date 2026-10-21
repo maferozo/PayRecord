@@ -1,0 +1,33 @@
+name: Tarea diaria de PayRecord
+
+# Reemplaza el WebJob que el plan gratuito de Azure App Service no admite
+# (ver docs/despliegue-azure.md, §10). Llama una vez al día al endpoint
+# protegido de PayRecord para generar los periodos mensuales pendientes y
+# enviar los recordatorios (en la app y por correo) que correspondan.
+#
+# Requiere dos secretos del repositorio (Settings → Secrets and variables →
+# Actions → New repository secret):
+#   TAREA_DIARIA_URL    https://<tu-app>.azurewebsites.net/notificaciones/tarea-diaria/
+#   TAREA_DIARIA_TOKEN  el mismo valor que TAREA_DIARIA_TOKEN en Azure
+
+on:
+  schedule:
+    - cron: "0 13 * * *" # 8:00 a.m. hora de Bogotá (UTC-5)
+  workflow_dispatch: {} # permite ejecutarla a mano desde la pestaña Actions
+
+jobs:
+  ejecutar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al endpoint de la tarea diaria
+        run: |
+          respuesta=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "X-Tarea-Token: ${{ secrets.TAREA_DIARIA_TOKEN }}" \
+            "${{ secrets.TAREA_DIARIA_URL }}")
+          cuerpo=$(echo "$respuesta" | sed '$d')
+          codigo=$(echo "$respuesta" | tail -n 1)
+          echo "Respuesta ($codigo): $cuerpo"
+          if [ "$codigo" != "200" ]; then
+            echo "::error::La tarea diaria respondió $codigo"
+            exit 1
+          fi

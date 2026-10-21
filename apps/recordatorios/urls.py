@@ -9,4 +9,5 @@ urlpatterns = [
     path("programados/", views.ProgramadosView.as_view(), name="programados"),
     path("<int:pk>/abrir/", views.abrir_notificacion, name="abrir"),
     path("leer-todas/", views.marcar_todas_leidas, name="leer_todas"),
+    path("tarea-diaria/", views.ejecutar_tarea_diaria, name="tarea_diaria"),
 ]

@@ -147,8 +147,8 @@ class EvolucionMensualTests(BaseAnalitica):
 
     def test_el_ultimo_mes_es_el_actual(self):
         serie = selectors.evolucion_mensual(self.usuario, meses=6, hoy=HOY)
-        self.assertEqual(serie[-1]["etiqueta"], "ago 26")
-        self.assertEqual(serie[0]["etiqueta"], "mar 26")
+        self.assertEqual(serie[-1]["etiqueta"], "ago 2026")
+        self.assertEqual(serie[0]["etiqueta"], "mar 2026")
 
     def test_rellena_los_meses_sin_datos(self):
         """Un hueco en el gráfico se leería como un mes inexistente."""
@@ -170,8 +170,8 @@ class EvolucionMensualTests(BaseAnalitica):
 
     def test_cruza_el_cambio_de_ano(self):
         serie = selectors.evolucion_mensual(self.usuario, meses=6, hoy=date(2027, 2, 15))
-        self.assertEqual(serie[0]["etiqueta"], "sep 26")
-        self.assertEqual(serie[-1]["etiqueta"], "feb 27")
+        self.assertEqual(serie[0]["etiqueta"], "sep 2026")
+        self.assertEqual(serie[-1]["etiqueta"], "feb 2027")
 
 
 class ComprometidoEsteMesTests(BaseAnalitica):
@@ -326,7 +326,7 @@ class ComprometidoPorMesTests(BaseAnalitica):
 
     def test_el_primer_mes_es_el_actual(self):
         serie = selectors.comprometido_por_mes(self.usuario, meses_adelante=4, hoy=HOY)
-        self.assertEqual(serie[0]["etiqueta"], "ago 26")
+        self.assertEqual(serie[0]["etiqueta"], "ago 2026")
         self.assertTrue(serie[0]["es_mes_actual"])
         self.assertFalse(serie[1]["es_mes_actual"])
 

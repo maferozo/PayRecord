@@ -31,6 +31,12 @@ RUTAS_PUBLICAS = {
     "usuarios:password_reset_done",
     "usuarios:password_reset_confirm",
     "usuarios:password_reset_complete",
+    # No es una página: es el endpoint que llama el workflow programado de
+    # GitHub Actions (§15, §16). A propósito no exige sesión -- quien lo
+    # llama es un proceso externo, no una persona -- se protege con un
+    # token propio en vez de con login. Ver apps/recordatorios/tests/
+    # test_correo.py::TareaDiariaEndpointTests para su cobertura de acceso.
+    "recordatorios:tarea_diaria",
 }
 
 

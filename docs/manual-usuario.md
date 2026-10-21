@@ -242,5 +242,8 @@ Deja de aparecer, pero el registro se conserva internamente para no alterar
 tus estadísticas. Puedes volver a crearla.
 
 **¿Recibiré correos?**
-En esta versión los recordatorios son solo dentro de la aplicación. El canal
-de correo está previsto para una versión posterior.
+Dentro de la aplicación, siempre. Por correo, solo si activas **Notificaciones
+por correo** en tu perfil (`Mi cuenta` → sección *Preferencias*). Está
+apagado por defecto. Una vez lo actives, los recordatorios que marques al
+registrar o editar una obligación (7/3/1 días antes, el mismo día) se envían
+también a tu correo, además de aparecer en la campana de la aplicación.
